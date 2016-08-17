@@ -169,10 +169,10 @@ namespace GeometryGym.Ifc
 	public partial class IfcIndexedPolygonalFaceWithVoids : IfcIndexedPolygonalFace
 	{
 		internal List<List<int>> mInnerCoordIndices = new List<List<int>>();// : List[1:?] LIST [3:?] OF IfcPositiveInteger;
-		public IEnumerable<IEnumerable<int>> InnerCoordIndices { get { return mInnerCoordIndices; } set { mInnerCoordIndices = value.ToList().ConvertAll(x => x.ToList()); } }
+		public List<List<int>> InnerCoordIndices { get { return mInnerCoordIndices; } set { mInnerCoordIndices = value.ToList().ConvertAll(x => x.ToList()); } }
 		internal IfcIndexedPolygonalFaceWithVoids() : base() { }
 		internal IfcIndexedPolygonalFaceWithVoids(DatabaseIfc db, IfcIndexedPolygonalFaceWithVoids f) : base(db, f) { mInnerCoordIndices.AddRange(f.mInnerCoordIndices); }
-		public IfcIndexedPolygonalFaceWithVoids(DatabaseIfc db, IEnumerable<int> coords, IEnumerable<IEnumerable<int>> inners) : base(db, coords)
+		public IfcIndexedPolygonalFaceWithVoids(DatabaseIfc db, IEnumerable<int> coords, List<List<int>> inners) : base(db, coords)
 		{ InnerCoordIndices = inners; }
 		protected override void parseFields(List<string> arrFields, ref int ipos)
 		{

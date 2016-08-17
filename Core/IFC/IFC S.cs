@@ -656,7 +656,7 @@ additional types	some additional representation types are given:
 		internal static void parseFields(IfcSimplePropertyTemplate s, List<string> arrFields, ref int ipos)
 		{
 			IfcPropertyTemplate.parseFields(s, arrFields, ref ipos);
-			if (!Enum.TryParse<IfcSimplePropertyTemplateTypeEnum>(arrFields[ipos++].Replace(".", ""), out s.mTemplateType))
+			if (!ggEnum.TryParse<IfcSimplePropertyTemplateTypeEnum>(arrFields[ipos++].Replace(".", ""), true, out s.mTemplateType))
 				s.mTemplateType = IfcSimplePropertyTemplateTypeEnum.NOTDEFINED;
 			s.mPrimaryMeasureType = arrFields[ipos++].Replace("'", ""); ;
 			s.mSecondaryMeasureType = arrFields[ipos++].Replace("'", ""); ;
@@ -664,7 +664,7 @@ additional types	some additional representation types are given:
 			s.mPrimaryUnit = ParserSTEP.ParseLink(arrFields[ipos++]);
 			s.mSecondaryUnit = ParserSTEP.ParseLink(arrFields[ipos++]);
 			s.mExpression = arrFields[ipos++].Replace("'", "");
-			if (!Enum.TryParse<IfcStateEnum>(arrFields[ipos++].Replace(".", ""), out s.mAccessState))
+			if (!ggEnum.TryParse<IfcStateEnum>(arrFields[ipos++].Replace(".", ""), true, out s.mAccessState))
 				s.mAccessState = IfcStateEnum.NA;
 		}
 		protected override string BuildStringSTEP()
@@ -2678,7 +2678,7 @@ additional types	some additional representation types are given:
 			if (mDatabase.mRelease == ReleaseVersion.IFC2x3)
 			{
 				IfcSurfaceTextureEnum texture = IfcSurfaceTextureEnum.NOTDEFINED;
-				if (!Enum.TryParse<IfcSurfaceTextureEnum>(mMode, out texture))
+				if (!ggEnum.TryParse<IfcSurfaceTextureEnum>(mMode,true, out texture))
 					texture = IfcSurfaceTextureEnum.NOTDEFINED;
 				result += ",." + texture.ToString() + ".,"+ ParserSTEP.LinkToString(mTextureTransform);
 			}

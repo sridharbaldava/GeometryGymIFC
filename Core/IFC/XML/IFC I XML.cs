@@ -72,7 +72,7 @@ namespace GeometryGym.Ifc
 				else
 				{
 					IfcLineIndex li = seg as IfcLineIndex;
-					s.InnerText = string.Join(" ", li.mIndices.ConvertAll(x => x.ToString()));
+					s.InnerText = string.Join(" ", li.mIndices.ConvertAll(x => x.ToString()).ToArray());
 				} 
 			}
 		}

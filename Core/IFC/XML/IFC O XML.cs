@@ -173,9 +173,9 @@ namespace GeometryGym.Ifc
 				
 			}
 			if (xml.HasAttribute("LogicalAggregator"))
-				Enum.TryParse<IfcLogicalOperatorEnum>(xml.Attributes["LogicalAggregator"].Value, true, out mLogicalAggregator);
+				ggEnum.TryParse<IfcLogicalOperatorEnum>(xml.Attributes["LogicalAggregator"].Value, true, out mLogicalAggregator);
 			if (xml.HasAttribute("ObjectiveQualifier"))
-				Enum.TryParse<IfcObjectiveEnum>(xml.Attributes["ObjectiveQualifier"].Value, true, out mObjectiveQualifier);
+				ggEnum.TryParse<IfcObjectiveEnum>(xml.Attributes["ObjectiveQualifier"].Value, true, out mObjectiveQualifier);
 			if (xml.HasAttribute("UserDefinedQualifier"))
 				UserDefinedQualifier = xml.Attributes["UserDefinedQualifier"].Value;
 		}
@@ -275,9 +275,9 @@ namespace GeometryGym.Ifc
 					LastModifyingApplication = mDatabase.ParseXml<IfcApplication>(child as XmlElement);
 			}
 			if (xml.HasAttribute("State"))
-				Enum.TryParse<IfcStateEnum>(xml.Attributes["State"].Value, true, out mState);
+				ggEnum.TryParse<IfcStateEnum>(xml.Attributes["State"].Value, true, out mState);
 			if (xml.HasAttribute("ChangeAction"))
-				Enum.TryParse<IfcChangeActionEnum>(xml.Attributes["ChangeAction"].Value, out mChangeAction);
+				ggEnum.TryParse<IfcChangeActionEnum>(xml.Attributes["ChangeAction"].Value, true, out mChangeAction);
 			if (xml.HasAttribute("LastModifiedDate"))
 				LastModifiedDate = int.Parse(xml.Attributes["LastModifiedDate"].Value);
 			if (xml.HasAttribute("CreationDate"))

@@ -35,7 +35,7 @@ namespace GeometryGym.Ifc
 		{
 			base.ParseXml(xml);
 			if (xml.HasAttribute("Role"))
-				Enum.TryParse<IfcRoleEnum>(xml.Attributes["Role"].Value, true, out mRole);
+				ggEnum.TryParse<IfcRoleEnum>(xml.Attributes["Role"].Value, true, out mRole);
 			if (xml.HasAttribute("UserDefinedRole"))
 				UserDefinedRole = xml.Attributes["UserDefinedRole"].Value;
 			if (xml.HasAttribute("Description"))
@@ -107,7 +107,7 @@ namespace GeometryGym.Ifc
 		{
 			base.ParseXml(xml);
 			if (xml.HasAttribute("PredefinedType"))
-				Enum.TryParse<IfcAirTerminalTypeEnum>(xml.Attributes["PredefinedType"].Value, out mPredefinedType);
+				ggEnum.TryParse<IfcAirTerminalTypeEnum>(xml.Attributes["PredefinedType"].Value,true, out mPredefinedType);
 		}
 		internal override void SetXML(XmlElement xml, BaseClassIfc host, HashSet<int> processed)
 		{
@@ -122,7 +122,7 @@ namespace GeometryGym.Ifc
 		{
 			base.ParseXml(xml);
 			if (xml.HasAttribute("PredefinedType"))
-				Enum.TryParse<IfcAirTerminalTypeEnum>(xml.Attributes["PredefinedType"].Value, out mPredefinedType);
+				ggEnum.TryParse<IfcAirTerminalTypeEnum>(xml.Attributes["PredefinedType"].Value, true, out mPredefinedType);
 		}
 		internal override void SetXML(XmlElement xml, BaseClassIfc host, HashSet<int> processed)
 		{
@@ -187,7 +187,7 @@ namespace GeometryGym.Ifc
 			if (xml.HasAttribute("Condition"))
 				Condition = xml.Attributes["Condition"].Value;
 			if (xml.HasAttribute("ArithmeticOperator"))
-				Enum.TryParse<IfcArithmeticOperatorEnum>(xml.Attributes["ArithmeticOperator"].Value, true, out mArithmeticOperator);
+				ggEnum.TryParse<IfcArithmeticOperatorEnum>(xml.Attributes["ArithmeticOperator"].Value, true, out mArithmeticOperator);
 
 
 		}

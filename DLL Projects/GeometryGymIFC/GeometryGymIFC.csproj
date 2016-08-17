@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>GGYM.IFC</RootNamespace>
     <AssemblyName>GeometryGymIFC</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -229,6 +229,12 @@
     </Compile>
     <Compile Include="..\..\Core\STEP\ParserSTEP.cs">
       <Link>STEP\ParserSTEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Other\Enum.cs">
+      <Link>Other\Enum.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Other\Tuple.cs">
+      <Link>Other\Tuple.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -152,7 +152,7 @@ namespace GeometryGym.Ifc
 			setAttribute(xml, "AttributeIdentifier", AttributeIdentifier);
 			setAttribute(xml, "InstanceName", InstanceName);
 			if (mListPositions.Count > 0)
-				xml.SetAttribute("ListPositions", String.Join(" ", mListPositions));
+				xml.SetAttribute("ListPositions", String.Join(" ", mListPositions.ConvertAll(x=>x.ToString()).ToArray()));
 			if (mInnerReference > 0)
 				xml.AppendChild(InnerReference.GetXML(xml.OwnerDocument, "InnerReference", this, processed));
 		}

@@ -18,37 +18,35 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Text;
 using System.Reflection;
 using System.IO;
 using System.ComponentModel;
-using System.Linq;
-using System.Xml;
-//using System.Xml.Linq;
+using System.Globalization;	
 
-
-namespace GeometryGym.Ifc
+namespace GeometryGym
 {
-	public abstract partial class IfcNamedUnit : BaseClassIfc, IfcUnit //ABSTRACT SUPERTYPE OF (ONEOF(IfcContextDependentUnit,IfcConversionBasedUnit,IfcSIUnit));
+	public class Tuple<T1, T2>
 	{
-		internal override void ParseXml(XmlElement xml)
+    	public T1 Item1 { get; private set; }
+		public T2 Item2 { get; private set; }
+		internal Tuple(T1 item1, T2 item2)
 		{
-			base.ParseXml(xml);
-			foreach (XmlNode child in xml.ChildNodes)
-			{
-				string name = child.Name;
-				if (string.Compare(name, "Dimensions") == 0)
-					Dimensions = mDatabase.ParseXml<IfcDimensionalExponents>(child as XmlElement);
-			}
-			if (xml.HasAttribute("UnitType"))
-				ggEnum.TryParse<IfcUnitEnum>(xml.Attributes["UnitType"].Value, true, out mUnitType);
+			Item1 = item1;
+			Item2 = item2;
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, HashSet<int> processed)
+	}
+	public class Tuple<T1, T2, T3>
+	{
+		public T1 Item1 { get; private set; }
+		public T2 Item2 { get; private set; }
+		public T3 Item3 { get; private set; }
+		internal Tuple(T1 item1, T2 item2, T3 item3)
 		{
-			base.SetXML(xml, host, processed);
-			if (mDimensions > 0)
-				xml.AppendChild(Dimensions.GetXML(xml.OwnerDocument, "Dimensions", this, processed));
-			xml.SetAttribute("UnitType", mUnitType.ToString().ToLower());
+			Item1 = item1;
+			Item2 = item2;
+			Item3 = item3;
 		}
 	}
 }

@@ -273,7 +273,7 @@ namespace GeometryGym.Ifc
 			if (xml.HasAttribute("SenseAgreement"))
 				bool.TryParse(xml.Attributes["SenseAgreement"].Value, out mSenseAgreement);
 			if (xml.HasAttribute("MasterRepresentation"))
-				Enum.TryParse<IfcTrimmingPreference>(xml.Attributes["MasterRepresentation"].Value, true, out mMasterRepresentation);
+				ggEnum.TryParse<IfcTrimmingPreference>(xml.Attributes["MasterRepresentation"].Value, true, out mMasterRepresentation);
 		}
 		internal override void SetXML(XmlElement xml, BaseClassIfc host, HashSet<int> processed)
 		{
