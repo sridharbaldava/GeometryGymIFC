@@ -37,18 +37,51 @@ namespace GeometryGym.Ifc
 			foreach (XmlNode child in xml.ChildNodes)
 			{
 				string name = child.Name;
-				if (string.Compare(name, "Dimensions") == 0)
+				if (string.Compare(name, "Dimensions", true) == 0)
 					Dimensions = mDatabase.ParseXml<IfcDimensionalExponents>(child as XmlElement);
+				else if (string.Compare(name, "UnitType", true) == 0)
+					Enum.TryParse<IfcUnitEnum>(child.InnerText, true, out mUnitType);
 			}
 			if (xml.HasAttribute("UnitType"))
 				Enum.TryParse<IfcUnitEnum>(xml.Attributes["UnitType"].Value, true, out mUnitType);
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
-			if (mDimensions > 0)
+			if (mDimensions != null)
 				xml.AppendChild(Dimensions.GetXML(xml.OwnerDocument, "Dimensions", this, processed));
 			xml.SetAttribute("UnitType", mUnitType.ToString().ToLower());
+		}
+	}
+	public partial class IfcNavigationElement : IfcBuiltElement
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			if (mPredefinedType != IfcNavigationElementTypeEnum.NOTDEFINED)
+				xml.SetAttribute("PredefinedType", mPredefinedType.ToString().ToLower());
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			XmlAttribute predefinedType = xml.Attributes["PredefinedType"];
+			if (predefinedType != null)
+				Enum.TryParse<IfcNavigationElementTypeEnum>(predefinedType.Value, out mPredefinedType);
+		}
+	}
+	public partial class IfcNavigationElementType : IfcBuiltElementType
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			xml.SetAttribute("PredefinedType", mPredefinedType.ToString().ToLower());
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			XmlAttribute predefinedType = xml.Attributes["PredefinedType"];
+			if (predefinedType != null)
+				Enum.TryParse<IfcNavigationElementTypeEnum>(predefinedType.Value, out mPredefinedType);
 		}
 	}
 }

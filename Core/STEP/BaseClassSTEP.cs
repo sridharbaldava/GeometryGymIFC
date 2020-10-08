@@ -28,25 +28,30 @@ using System.Threading.Tasks;
 
 namespace GeometryGym.STEP
 {
-	public partial class STEPEntity 
+
+	public partial interface ISTEPEntity
 	{
-		internal int mIndex = 0; 
-		internal List<string> mComments = new List<string>();
-		internal string mSTEPString = "";
+		int Index { get; }
+		int StepId { get; }
+		string StepClassName { get; }
+	}
+	[Serializable]
+	public partial class STEPEntity
+	{
+		[NonSerialized] internal int mIndex = 0;
+		[NonSerialized] internal List<string> mComments = new List<string>();
 
-		public int Index { get { return mIndex; } }
-		public List<string> Comments { get { return mComments; } set { mComments = value; } }
+		public int Index { get { return mIndex; } private set { mIndex = value; } }
+		public int StepId { get { return mIndex; } private set { mIndex = value; } }
 
-		protected static  ConcurrentDictionary<string, Type> mTypes = new ConcurrentDictionary<string, Type>();
-		protected static ConcurrentDictionary<string, MethodInfo> mConstructorsSchema = new ConcurrentDictionary<string, MethodInfo>();
-		protected static ConcurrentDictionary<string, MethodInfo> mConstructorsNoSchema = new ConcurrentDictionary<string, MethodInfo>();
+		protected static ConcurrentDictionary<string, Type> mTypes = new ConcurrentDictionary<string, Type>();
+		protected static ConcurrentDictionary<string, ConstructorInfo> mConstructors = new ConcurrentDictionary<string, ConstructorInfo>();
 
-		internal STEPEntity() { }
-		internal STEPEntity(int record, string kw, string line) { mIndex = record; mSTEPString = line; }
-		public virtual string KeyWord {get { return this.GetType().Name;}}
+		internal STEPEntity() { initialize(); }
+		public virtual string StepClassName { get { return this.GetType().Name; } }
 
-		internal virtual void Initialize() { }
-		public override string ToString()
+		protected virtual void initialize() { }
+		public string StringSTEP()
 		{
 			string str = BuildStringSTEP();
 			if (string.IsNullOrEmpty(str))
@@ -57,8 +62,30 @@ namespace GeometryGym.STEP
 				foreach (string c in mComments)
 					comment += "/* " + c + " */\r\n";
 			}
-			return comment + (mIndex > 0 ? "#" + mIndex + "= " : "") + KeyWord.ToUpper() + "(" + str.Substring(1) + ");";
+			return comment + (mIndex > 0 ? "#" + mIndex + "= " : "") + StepClassName.ToUpper() + "(" + str.Substring(1) + ");";
 		}
+		public string STEPSerialization() { return StepClassName.ToUpper() + "(" + BuildStringSTEP().Substring(1) + ")"; }
+		public override string ToString() { return StringSTEP(); }
 		protected virtual string BuildStringSTEP() { return ""; } 
+		public void  AddComment(string comment) { mComments.Add(comment); }
+
+		
+		internal static Type GetType(string classNameIfc, string nameSpace)
+		{
+			if (string.IsNullOrEmpty(classNameIfc))
+				return null;
+			Type type = null;
+			string name = classNameIfc;
+			string[] fields = classNameIfc.Split(".".ToCharArray());
+			if (fields != null && fields.Length > 0)
+				name = fields[0];
+			if (!mTypes.TryGetValue(name, out type))
+			{
+				type = Type.GetType("GeometryGym." + nameSpace + "." + name, false, true);
+				if (type != null)
+					mTypes[name] = type;
+			}
+			return type;
+		}
 	}
 }

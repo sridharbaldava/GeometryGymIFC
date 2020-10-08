@@ -27,21 +27,18 @@ using Rhino.Geometry;
 
 namespace GeometryGym.Ifc
 {
-	public abstract partial class IfcBoundedCurve
+	public abstract partial class IfcBoundedCurve : IfcCurve
 	{
-		public override Curve Curve
+		public override Curve Curve(double tol)
 		{
-			get
-			{
-				throw new NotImplementedException();
-			}
+			throw new NotImplementedException();
 		}
 		
 	}
 	public partial class IfcBSplineCurve
 	{
 		protected IfcBSplineCurve(DatabaseIfc m, NurbsCurve nonRationalCurve, bool twoD)
-			: this(m, nonRationalCurve.Degree, IfcBSplineCurveForm.UNSPECIFIED)
+			: this(m, nonRationalCurve.Degree)
 		{
 			int ilast = nonRationalCurve.Points.Count - (nonRationalCurve.IsPeriodic ? mDegree : 0);
 			if (twoD)
@@ -49,7 +46,7 @@ namespace GeometryGym.Ifc
 				for (int icounter = 0; icounter < ilast; icounter++)
 				{
 					Point3d p3 = nonRationalCurve.Points[icounter].Location;
-					mControlPointsList.Add(new IfcCartesianPoint(m, new Point2d(p3.X, p3.Y)).mIndex);
+					mControlPointsList.Add(new IfcCartesianPoint(m, new Point2d(p3.X, p3.Y)));
 				}
 				if (nonRationalCurve.IsPeriodic)
 				{
@@ -60,7 +57,7 @@ namespace GeometryGym.Ifc
 			else
 			{
 				for (int icounter = 0; icounter < ilast; icounter++)
-					mControlPointsList.Add(new IfcCartesianPoint(m, nonRationalCurve.Points[icounter].Location).mIndex);
+					mControlPointsList.Add(new IfcCartesianPoint(m, nonRationalCurve.Points[icounter].Location));
 				if (nonRationalCurve.IsPeriodic)
 				{
 					for (int icounter = 0; icounter < mDegree; icounter++)
@@ -71,10 +68,10 @@ namespace GeometryGym.Ifc
 	}
 	public partial class IfcBSplineCurveWithKnots
 	{
-		public IfcBSplineCurveWithKnots(DatabaseIfc db, int degree, List<Point3d> controlPoints, IfcBSplineCurveForm form, List<int> multiplicities, List<double> knots, IfcKnotType knotSpec) :
-			base(degree, controlPoints.ConvertAll(x=>new IfcCartesianPoint(db, x)), form)
+		public IfcBSplineCurveWithKnots(DatabaseIfc db, int degree, List<Point3d> controlPoints, List<int> multiplicities, List<double> knots, IfcKnotType knotSpec) :
+			base(degree, controlPoints.ConvertAll(x=>new IfcCartesianPoint(db, x)))
 		{
-			mMultiplicities.AddRange(multiplicities);
+			mKnotMultiplicities.AddRange(multiplicities);
 			mKnots.AddRange(knots);
 		}
 		internal IfcBSplineCurveWithKnots(DatabaseIfc m, NurbsCurve nc, bool twoD)
@@ -85,12 +82,12 @@ namespace GeometryGym.Ifc
 			ClosedCurve = nc.IsClosed ? IfcLogicalEnum.TRUE : IfcLogicalEnum.FALSE;
 			adoptKnotsAndMultiplicities(nc);
 		}
-		public IfcBSplineCurveWithKnots(DatabaseIfc m, int degree, List<Point2d> controlPoints, IfcBSplineCurveForm form, List<int> multiplicities, List<double> knots, IfcKnotType knotSpec) :
-			base(degree, controlPoints.ConvertAll(x => new IfcCartesianPoint(m, x)), form)
+		public IfcBSplineCurveWithKnots(DatabaseIfc m, int degree, List<Point2d> controlPoints, IEnumerable<int> multiplicities, IEnumerable<double> knots, IfcKnotType knotSpec) :
+			base(degree, controlPoints.ConvertAll(x => new IfcCartesianPoint(m, x)))
 		{
 			if (mDatabase.mModelView != ModelView.Ifc4NotAssigned)
 				throw new Exception("Invalid Model View for IfcRationalBSplineCurveWithKnots : " + mDatabase.ModelView.ToString());
-			mMultiplicities.AddRange(multiplicities);
+			mKnotMultiplicities.AddRange(multiplicities);
 			mKnots.AddRange(knots);
 		}
 		private void adoptKnotsAndMultiplicities(NurbsCurve nc)
@@ -104,7 +101,7 @@ namespace GeometryGym.Ifc
 				else
 				{
 					mKnots.Add(nc.Knots[0] - (nc.Knots[1] - nc.Knots[0]));
-					mMultiplicities.Add(1);
+					mKnotMultiplicities.Add(1);
 				}
 				double knot = nc.Knots[0];
 				for (int icounter = 1; icounter < nc.Knots.Count; icounter++)
@@ -113,7 +110,7 @@ namespace GeometryGym.Ifc
 					if ((t - knot) > tol)
 					{
 						mKnots.Add(knot);
-						mMultiplicities.Add(kc);
+						mKnotMultiplicities.Add(kc);
 						knot = t;
 						kc = 1;
 					}
@@ -122,12 +119,12 @@ namespace GeometryGym.Ifc
 				}
 				mKnots.Add(knot);
 				if (kc > 1)
-					mMultiplicities.Add(kc + 1);
+					mKnotMultiplicities.Add(kc + 1);
 				else
 				{
-					mMultiplicities.Add(1);
+					mKnotMultiplicities.Add(1);
 					mKnots.Add(knot + (knot - nc.Knots[nc.Knots.Count - 2]));
-					mMultiplicities.Add(1);
+					mKnotMultiplicities.Add(1);
 				}
 			}
 			else
@@ -140,7 +137,7 @@ namespace GeometryGym.Ifc
 					if ((t - knot) > tol)
 					{
 						mKnots.Add(knot);
-						mMultiplicities.Add(kc);
+						mKnotMultiplicities.Add(kc);
 						knot = t;
 						kc = 1;
 					}
@@ -148,7 +145,7 @@ namespace GeometryGym.Ifc
 						kc++;
 				}
 				mKnots.Add(knot);
-				mMultiplicities.Add(kc + 1);
+				mKnotMultiplicities.Add(kc + 1);
 			}
 		}
 	}

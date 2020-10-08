@@ -31,8 +31,7 @@ namespace GeometryGym.Ifc
 	{
 		public IfcTrimmedCurve(IfcCartesianPoint s, IfcCartesianPoint e) : base(s.mDatabase)
 		{
-			IfcLine il = new IfcLine(s, new IfcVector(s.mDatabase,e.Location- s.Location));
-			mBasisCurve = il.mIndex;
+			BasisCurve = new IfcLine(s, new IfcVector(s.mDatabase,e.Location- s.Location));
 			mTrim1 = new IfcTrimmingSelect(s);
 			mTrim2 = new IfcTrimmingSelect(e);
 			mMasterRepresentation = IfcTrimmingPreference.CARTESIAN;
@@ -46,7 +45,7 @@ namespace GeometryGym.Ifc
 			if (optStrt == null)
 				optStrt = twoD ? new IfcCartesianPoint(db, new Point2d(s.X, s.Y)) : new IfcCartesianPoint(db, s);
 			end = twoD ? new IfcCartesianPoint(db, new Point2d(e.X, e.Y)) : new IfcCartesianPoint(db,e);
-			double angleFactor = mDatabase.mContext.UnitsInContext.getScaleSI(IfcUnitEnum.PLANEANGLEUNIT);
+			double angleFactor = mDatabase.mContext.UnitsInContext.ScaleSI(IfcUnitEnum.PLANEANGLEUNIT);
 			if (twoD)
 			{
 				if (a.Plane.ZAxis.Z < 0)

@@ -37,7 +37,7 @@ namespace GeometryGym.Ifc
 			if (xml.HasAttribute("PredefinedType"))
 				Enum.TryParse<IfcUnitaryEquipmentTypeEnum>(xml.Attributes["PredefinedType"].Value,true, out mPredefinedType);
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			if (mPredefinedType != IfcUnitaryEquipmentTypeEnum.NOTDEFINED)
@@ -52,7 +52,7 @@ namespace GeometryGym.Ifc
 			if (xml.HasAttribute("PredefinedType"))
 				Enum.TryParse<IfcUnitaryEquipmentTypeEnum>(xml.Attributes["PredefinedType"].Value,true, out mPredefinedType);
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			if (mPredefinedType != IfcUnitaryEquipmentTypeEnum.NOTDEFINED)
@@ -74,15 +74,15 @@ namespace GeometryGym.Ifc
 					{
 						IfcUnit u = mDatabase.ParseXml<IfcUnit>(cn as XmlElement);
 						if (u != null)
-							AddUnit(u);
+							Units.Add(u);
 					}
 				}
 			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
-			XmlElement element = xml.OwnerDocument.CreateElement("Units");
+			XmlElement element = xml.OwnerDocument.CreateElement("Units", mDatabase.mXmlNamespace);
 			xml.AppendChild(element);
 			foreach (IfcUnit unit in Units)
 				element.AppendChild(mDatabase[unit.Index].GetXML(xml.OwnerDocument, "", this, processed));
@@ -108,7 +108,7 @@ namespace GeometryGym.Ifc
 			if (xml.HasAttribute("FlangeSlope"))
 				mFlangeSlope = double.Parse(xml.Attributes["FlangeSlope"].Value);
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			xml.SetAttribute("Depth", mDepth.ToString());
@@ -121,7 +121,7 @@ namespace GeometryGym.Ifc
 				xml.SetAttribute("EdgeRadius", mEdgeRadius.ToString());
 			if (!double.IsNaN(mFlangeSlope))
 				xml.SetAttribute("FlangeSlope", mFlangeSlope.ToString());
-			if (mDatabase.Release == ReleaseVersion.IFC2x3 && !double.IsNaN(mCentreOfGravityInX))
+			if (mDatabase.Release < ReleaseVersion.IFC4 && !double.IsNaN(mCentreOfGravityInX))
 				xml.SetAttribute("CentreOfGravityInX", mCentreOfGravityInX.ToString());
 		}
 	}

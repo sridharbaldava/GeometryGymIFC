@@ -29,44 +29,73 @@ namespace GeometryGym.Ifc
 {
 	public partial class IfcLine : IfcCurve
 	{
-		public override Curve Curve
+		public override Curve Curve(double tol) { return new LineCurve(Line()); }
+		public Line Line()
 		{
-			get
+			Point3d pt = Pnt.Location;
+			return new Line(pt, pt + Dir.Vector);
+		}
+	}
+	public partial class IfcLinearPlacement : IfcObjectPlacement
+	{
+		public override Transform Transform()
+		{
+			double tol = mDatabase == null ? 1e-5 : mDatabase.Tolerance;
+			IfcDistanceExpression distanceExpression = Distance;
+			IfcCurve curve = PlacementMeasuredAlong;
+			Plane plane = Plane.Unset;
+			plane = curve.planeAt(distanceExpression, false, tol);
+			if (plane.IsValid)
 			{
-				Point3d pt = Pnt.Location;
-				return new LineCurve(pt, pt + Dir.Vector);
+				Vector3d xAxis = Vector3d.CrossProduct(plane.ZAxis, Vector3d.ZAxis);
+				plane = new Plane(plane.Origin, xAxis, plane.ZAxis);
+
+				if (plane.IsValid)
+				{
+					IfcOrientationExpression orientationExpression = Orientation;
+					if (orientationExpression != null)
+					{
+						Vector3d x = orientationExpression.LateralAxisDirection.Vector3d, z = orientationExpression.VerticalAxisDirection.Vector3d;
+						Vector3d y = Vector3d.CrossProduct(z, x);
+						plane = new Plane(plane.Origin, x, y);
+					}
+					return Rhino.Geometry.Transform.ChangeBasis(plane, Plane.WorldXY);
+				}
 			}
+			if (CartesianPosition != null)
+				return CartesianPosition.Transform();
+
+			return Rhino.Geometry.Transform.Unset;
 		}
 	}
 	public partial class IfcLocalPlacement : IfcObjectPlacement
 	{
-		private Transform mtransform = Transform.Unset;
-		public override Transform Transform
+		public override Transform Transform()
 		{
-			get
+			IfcObjectPlacement placementRelTo = PlacementRelTo;
+			IfcAxis2Placement relativePlacement = RelativePlacement;
+			bool identityRelative = relativePlacement == null;
+			if(relativePlacement != null)
 			{
-				if (!mCalculated)
+				if (mDatabase != null && relativePlacement.Plane.IsValid)
 				{
-					mCalculated = true;
-					IfcObjectPlacement placementRelTo = PlacementRelTo;
-					IfcAxis2Placement relativePlacement = RelativePlacement;
-					if (placementRelTo == null || placementRelTo.isXYPlane)
-					{
-						if (relativePlacement == null || relativePlacement.IsXYPlane)
-							mtransform = Transform.Identity;
-						else
-							mtransform = Transform.ChangeBasis(relativePlacement.Plane,Plane.WorldXY);
-					}
-					else
-					{
-						if (relativePlacement == null || relativePlacement.IsXYPlane)
-							mtransform = placementRelTo.Transform;
-						else
-							mtransform = placementRelTo.Transform * Transform.ChangeBasis(relativePlacement.Plane, Plane.WorldXY);
-					}
+					Plane plane = relativePlacement.Plane;
+					if (plane.Origin.DistanceTo(Point3d.Origin) < mDatabase.Tolerance && plane.XAxis.IsParallelTo(Vector3d.XAxis) == 1 && plane.YAxis.IsParallelTo(Vector3d.YAxis) == 1)
+						identityRelative = true;
 				}
-				return mtransform;
+				else
+					identityRelative = relativePlacement.IsXYPlane;
 			}
+			if (placementRelTo == null || placementRelTo.isXYPlane)
+			{
+				if (identityRelative)
+					return Rhino.Geometry.Transform.Identity;
+				else
+					return Rhino.Geometry.Transform.ChangeBasis(relativePlacement.Plane,Plane.WorldXY);
+			}
+			if (identityRelative)
+				return placementRelTo.Transform();
+			return placementRelTo.Transform() * Rhino.Geometry.Transform.ChangeBasis(relativePlacement.Plane, Plane.WorldXY);
 		}
 	} 
 }

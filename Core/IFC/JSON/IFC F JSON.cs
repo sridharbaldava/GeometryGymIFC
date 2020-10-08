@@ -25,7 +25,71 @@ using System.ComponentModel;
 using System.Linq;
 using GeometryGym.STEP;
 
+using Newtonsoft.Json.Linq;
+
 namespace GeometryGym.Ifc
 {
-	
+	public partial class IfcFace : IfcTopologicalRepresentationItem //	SUPERTYPE OF(IfcFaceSurface)
+	{
+		internal override void parseJObject(JObject obj)
+		{
+			base.parseJObject(obj);
+			Bounds.AddRange(mDatabase.extractJArray<IfcFaceBound>(obj.GetValue("Bounds", StringComparison.InvariantCultureIgnoreCase) as JArray));
+		}
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		{
+			base.setJSON(obj, host, options);
+			obj["Bounds"] = new JArray(Bounds.ConvertAll(x=> x.getJson(this, options)));
+		}
+	}
+	public partial class IfcFaceBasedSurfaceModel : IfcGeometricRepresentationItem, IfcSurfaceOrFaceSurface
+	{
+		internal override void parseJObject(JObject obj)
+		{
+			base.parseJObject(obj);
+			FbsmFaces.AddRange(mDatabase.extractJArray<IfcConnectedFaceSet>(obj.GetValue("FbsmFaces", StringComparison.InvariantCultureIgnoreCase) as JArray));
+		}
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		{
+			base.setJSON(obj, host, options);
+			obj["FbsmFaces"] = new JArray(mFbsmFaces.ConvertAll(x => x.getJson(this, options)));
+		}
+	}
+	public partial class IfcFaceBound : IfcTopologicalRepresentationItem //SUPERTYPE OF (ONEOF (IfcFaceOuterBound))
+	{
+		internal override void parseJObject(JObject obj)
+		{
+			base.parseJObject(obj);
+			JObject jobj = obj.GetValue("Bound", StringComparison.InvariantCultureIgnoreCase) as JObject;
+			if (jobj != null)
+				Bound = extractObject<IfcLoop>(jobj);
+			JToken token = obj.GetValue("Orientation", StringComparison.InvariantCultureIgnoreCase);
+			if (token != null)
+				Orientation = token.Value<bool>();
+		}
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		{
+			base.setJSON(obj, host, options);
+			obj["Bound"] = Bound.getJson(this, options);
+			obj["Orientation"] = Orientation;
+		}
+	}
+	public partial class IfcFillAreaStyle : IfcPresentationStyle, IfcPresentationStyleSelect
+	{
+		internal override void parseJObject(JObject obj)
+		{
+			base.parseJObject(obj);
+			JToken token = obj.GetValue("ModelorDraughting", StringComparison.InvariantCultureIgnoreCase);
+			if (token != null)
+				bool.TryParse(token.Value<string>(), out mModelorDraughting);
+			FillStyles.AddRange(mDatabase.extractJArray<IfcFillStyleSelect>(obj.GetValue("FillStyles", StringComparison.InvariantCultureIgnoreCase) as JArray));
+		}
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		{
+			base.setJSON(obj, host, options);
+			if(mDatabase.Release > ReleaseVersion.IFC2x3)
+			obj["ModelorDraughting"] = mModelorDraughting.ToString();
+			obj["FillStyles"] = new JArray(mFillStyles.ConvertAll(x => x.getJson(this, options)));
+		}
+	}
 }

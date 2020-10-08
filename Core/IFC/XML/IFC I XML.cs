@@ -26,9 +26,34 @@ using System.Linq;
 using System.Xml;
 //using System.Xml.Linq;
 
+using GeometryGym.STEP;
+
 
 namespace GeometryGym.Ifc
 {
+	public partial class IfcInclinedReferenceSweptAreaSolid : IfcDirectrixDistanceSweptAreaSolid
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			if(mFixedAxisVertical != IfcLogicalEnum.UNKNOWN)
+				xml.SetAttribute("FixedAxisVertical", (mFixedAxisVertical == IfcLogicalEnum.TRUE ? "true" : "false"));
+			xml.AppendChild(Inclinating.GetXML(xml.OwnerDocument, "Inclinating", this, processed));
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			string fixedAxisVertical = xml.GetAttribute("FixedAxisVertical");
+			if (!string.IsNullOrEmpty(fixedAxisVertical))
+				mFixedAxisVertical = ParserIfc.ParseIFCLogical(fixedAxisVertical);
+			foreach (XmlNode child in xml.ChildNodes)
+			{
+				string name = child.Name;
+				if (string.Compare(name, "Inclinating", true) == 0)
+					Inclinating = mDatabase.ParseXml<IfcAxisLateralInclination>(child as XmlElement);
+			}
+		}
+	}
 	public partial class IfcIndexedPolyCurve : IfcBoundedCurve
 	{
 		internal override void ParseXml(XmlElement xml)
@@ -54,25 +79,25 @@ namespace GeometryGym.Ifc
 			if (xml.HasAttribute("SelfIntersect"))
 				mSelfIntersect = bool.Parse(xml.Attributes["SelfIntersect"].Value) ? IfcLogicalEnum.TRUE : IfcLogicalEnum.FALSE;
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			xml.AppendChild(Points.GetXML(xml.OwnerDocument, "Points", this, processed));
 			if (mSegments.Count > 0)
 			{
-				XmlElement element = xml.OwnerDocument.CreateElement("Segments");
+				XmlElement element = xml.OwnerDocument.CreateElement("Segments", mDatabase.mXmlNamespace);
 				xml.AppendChild(element);
 				foreach (IfcSegmentIndexSelect seg in Segments)
 				{
-					XmlElement s = xml.OwnerDocument.CreateElement(seg.GetType().Name + "-wrapper");
+					XmlElement s = xml.OwnerDocument.CreateElement(seg.GetType().Name + "-wrapper", mDatabase.mXmlNamespace);
 					element.AppendChild(s);
 					IfcArcIndex ai = seg as IfcArcIndex;
 					if (ai != null)
-						s.InnerText = ai.mA + " " + ai.mB + " " + ai.mC;
+						s.InnerText = ai[0] + " " + ai[1] + " " + ai[2];
 					else
 					{
 						IfcLineIndex li = seg as IfcLineIndex;
-						s.InnerText = string.Join(" ", li.mIndices.ConvertAll(x => x.ToString()));
+						s.InnerText = string.Join(" ", li.ConvertAll(x => x.ToString()));
 					}
 				}
 			}
@@ -97,19 +122,37 @@ namespace GeometryGym.Ifc
 				mFlangeEdgeRadius = double.Parse(xml.Attributes["FlangeEdgeRadius"].Value);
 			if (xml.HasAttribute("FlangeSlope"))
 				mFlangeSlope = double.Parse(xml.Attributes["FlangeSlope"].Value);
+			foreach (XmlNode child in xml.ChildNodes)
+			{
+				string name = child.Name;
+				if (string.Compare(name, "OverallWidth") == 0)
+					OverallWidth = ParserSTEP.ParseDouble(child.InnerText);
+				if (string.Compare(name, "OverallDepth") == 0)
+					OverallDepth = ParserSTEP.ParseDouble(child.InnerText);
+				if (string.Compare(name, "WebThickness") == 0)
+					WebThickness = ParserSTEP.ParseDouble(child.InnerText);
+				if (string.Compare(name, "FlangeThickness") == 0)
+					FlangeThickness = ParserSTEP.ParseDouble(child.InnerText);
+				if (string.Compare(name, "FlangeThickness") == 0)
+					FlangeThickness = ParserSTEP.ParseDouble(child.InnerText);
+				if (string.Compare(name, "FilletRadius") == 0)
+					FilletRadius = ParserSTEP.ParseDouble(child.InnerText);
+				if (string.Compare(name, "FlangeSlope") == 0)
+					FlangeSlope = ParserSTEP.ParseDouble(child.InnerText);
+			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			xml.SetAttribute("OverallWidth", mOverallWidth.ToString());
 			xml.SetAttribute("OverallDepth", mOverallDepth.ToString());
 			xml.SetAttribute("WebThickness", mWebThickness.ToString());
 			xml.SetAttribute("FlangeThickness", mFlangeThickness.ToString());
-			if (!double.IsNaN(mFilletRadius))
+			if (!double.IsNaN(mFilletRadius) && mFilletRadius > 0)
 				xml.SetAttribute("FilletRadius", mFilletRadius.ToString());
-			if (!double.IsNaN(mFlangeEdgeRadius))
+			if (!double.IsNaN(mFlangeEdgeRadius) && mFlangeEdgeRadius > 0)
 				xml.SetAttribute("FlangeEdgeRadius", mFlangeEdgeRadius.ToString());
-			if (!double.IsNaN(mFlangeSlope))
+			if (!double.IsNaN(mFlangeSlope) && mFlangeSlope > 0)
 				xml.SetAttribute("FlangeSlope", mFlangeSlope.ToString());
 		}
 	}

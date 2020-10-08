@@ -18,25 +18,34 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Reflection;
-using System.IO;
+using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Linq;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
 using System.Threading;
 using GeometryGym.STEP;
 using System.Collections;
 
+
 namespace GeometryGym.STEP
 {
-	public partial class DatabaseSTEP<T> : IEnumerable<T> where T : STEPEntity, new()
+	public partial class DatabaseSTEP<T> : IEnumerable<T> where T : STEPEntity//, new()
 	{
-		//private SortedDictionary<int,T> mObjects = new SortedDictionary<int, T>() {  };
-		//public int LastKey { get { return mObjects.Keys.Last(); } }
-		private List<T> mObjects = new List<T>() { null };
-		protected void setSize(int i) { mObjects.Capacity = i; }
-		public int LastKey { get { return mObjects.Count; } }
+		internal string mFileName = "";
+		public string FileName
+		{
+			get { return mFileName; }
+			set { mFileName = value; if(!string.IsNullOrEmpty(value)) FolderPath = Path.GetDirectoryName(value); }
+		}
+
+		public DatabaseSTEP() { mNextBlank = 1; }
+
+		private SortedDictionary<int, T> mObjects = new SortedDictionary<int, T>();
+		public int LastKey() { return mObjects.Count == 0 ? 0 : mObjects.Last().Key; }
 
 		public int NextObjectRecord { set { mNextBlank = value; } }
 		public virtual T this[int index]
@@ -44,82 +53,54 @@ namespace GeometryGym.STEP
 			get
 			{
 				T result = null;
-				//mObjects.TryGetValue(index, out result);
-				if (index > 0 && index < mObjects.Count)
-					result = mObjects[index];
-
+				mObjects.TryGetValue(index, out result);
 				return result;
 			}
 			set
 			{
 				if (value == null)
 				{
-					if (index > 0 && mObjects.Count > index)
-						mObjects[index] = null;
-					//	mObjects.Remove(index);
+					if (mObjects.ContainsKey(index))
+						mObjects.Remove(index);
 					if (index < mNextBlank && index > 0)
 						mNextBlank = index;
 					return;
 				}
-				//mObjects.Add(index,value);
-				if (mObjects.Count <= index)
-				{
-					for (int ncounter = mObjects.Count; ncounter <= index; ncounter++)
-						mObjects.Add(null);
-				}
+				
 				mObjects[index] = value;
 				if (index == mNextBlank)
 					mNextBlank = mNextBlank + 1;
 				value.mIndex = index;
 			}
 		}
-		internal void appendObject(T o) { this[NextBlank] = o; }
+		internal void appendObject(T o) { this[NextBlank()] = o; }
 		private int mNextBlank
 		{
 			get;
 			set;
-		} = 1;
-		internal int NextBlank
+		} 
+		internal int NextBlank()
 		{
-			get
-			{
-				//int blank = mNextBlank;
-				//while (mObjects.ContainsKey(blank))
-				//	blank++;
-				//return blank;
-				if (this[mNextBlank] == null)
-					return mNextBlank;
-				for (int icounter = mNextBlank; icounter < mObjects.Count; icounter++)
-				{
-					if (this[icounter] == null)
-					{
-						mNextBlank = icounter;
-						return mNextBlank;
-					}
-				}
-				return mNextBlank = mObjects.Count;
-			}
+			while (mObjects.ContainsKey(mNextBlank))
+				mNextBlank++;
+			return mNextBlank;
 		}
 		IEnumerator<T> IEnumerable<T>.GetEnumerator()
 		{
-			for(int icounter = 0; icounter < mObjects.Count; icounter++)
-			{
-				T result = mObjects[icounter] as T;
-				if (result != null)
-					yield return result;
-			}
+			return mObjects.Values.GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
-			return mObjects.GetEnumerator();
+			return mObjects.Values.GetEnumerator();
 		}
-		partial void printError(string str);
-		internal void logError(string str) { printError(str); }
+		private SortedSet<string> mParsingErrors = new SortedSet<string>();
+		private SortedSet<string> mParsingWarnings = new SortedSet<string>();
+		internal void logParseError(string str) { string error = "XX Error " + str;  if (!mParsingErrors.Contains(error)) mParsingErrors.Add(error); }
+		internal void logParseWarning(string str) { string warning = "!! Warning " + str; if (!mParsingWarnings.Contains(warning)) mParsingWarnings.Add(warning); }
 
-		
-
-		internal string PreviousApplication { get; set; } = "";
+		public string FolderPath { get; set; } 
+		internal string PreviousApplication { get; set; }
 	}
 }
 

@@ -28,6 +28,13 @@ using Newtonsoft.Json.Linq;
 
 namespace GeometryGym.Ifc
 {
+	public abstract partial class IfcValue : IfcMetricValueSelect //SELECT(IfcMeasureValue,IfcSimpleValue,IfcDerivedMeasureValue); stpentity parse method
+	{
+		public JObject getJson(BaseClassIfc host, BaseClassIfc.SetJsonOptions options)
+		{
+			return DatabaseIfc.extract(this);
+		}
+	}
 	public partial class IfcValveType : IfcFlowControllerType
 	{
 		internal override void parseJObject(JObject obj)
@@ -37,9 +44,9 @@ namespace GeometryGym.Ifc
 			if (token != null)
 				Enum.TryParse<IfcValveTypeEnum>(token.Value<string>(), true, out mPredefinedType);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, HashSet<int> processed)
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
-			base.setJSON(obj, host, processed);
+			base.setJSON(obj, host, options);
 			if (mPredefinedType != IfcValveTypeEnum.NOTDEFINED)
 				obj["PredefinedType"] = mPredefinedType.ToString();
 		}
@@ -51,12 +58,12 @@ namespace GeometryGym.Ifc
 			base.parseJObject(obj);
 			JObject rp = obj.GetValue("VertexGeometry", StringComparison.InvariantCultureIgnoreCase) as JObject;
 			if (rp != null)
-				VertexGeometry = mDatabase.parseJObject<IfcPoint>(rp);
+				VertexGeometry = mDatabase.ParseJObject<IfcPoint>(rp);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, HashSet<int> processed)
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
-			base.setJSON(obj, host, processed);
-				obj["VertexGeometry"] = VertexGeometry.getJson(this, processed);
+			base.setJSON(obj, host, options);
+				obj["VertexGeometry"] = VertexGeometry.getJson(this, options);
 		}
 	}
 }

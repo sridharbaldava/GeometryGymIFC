@@ -29,6 +29,26 @@ using Newtonsoft.Json.Linq;
 
 namespace GeometryGym.Ifc
 {
+	public partial class IfcInclinedReferenceSweptAreaSolid : IfcDirectrixDistanceSweptAreaSolid
+	{
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		{
+			base.setJSON(obj, host, options);
+			if(mFixedAxisVertical != IfcLogicalEnum.UNKNOWN)
+			obj["FixedAxisVertical"] = mFixedAxisVertical.ToString();
+			obj["Inclinating"] = Inclinating.getJson(this, options);
+		}
+		internal override void parseJObject(JObject obj)
+		{
+			base.parseJObject(obj);
+			JToken fixedAxisVertical = obj.GetValue("FixedAxisVertical", StringComparison.InvariantCultureIgnoreCase);
+			if (fixedAxisVertical != null)
+				mFixedAxisVertical = ParserIfc.ParseIFCLogical(fixedAxisVertical.Value<string>());
+			JObject jobj = obj.GetValue("Inclinating", StringComparison.InvariantCultureIgnoreCase) as JObject;
+			if (jobj != null)
+				Inclinating = mDatabase.ParseJObject<IfcAxisLateralInclination>(jobj);
+		}
+	}
 	public partial class IfcIndexedPolyCurve : IfcBoundedCurve
 	{
 		internal override void parseJObject(JObject obj)
@@ -36,7 +56,7 @@ namespace GeometryGym.Ifc
 			base.parseJObject(obj);
 			JObject jobj = obj.GetValue("Points", StringComparison.InvariantCultureIgnoreCase) as JObject;
 			if (jobj != null)
-				Points = mDatabase.parseJObject<IfcCartesianPointList>(jobj);
+				Points = mDatabase.ParseJObject<IfcCartesianPointList>(jobj);
 			JArray array = obj.GetValue("Segments", StringComparison.InvariantCultureIgnoreCase) as JArray;
 			if (array != null)
 			{
@@ -64,10 +84,10 @@ namespace GeometryGym.Ifc
 			if (token != null)
 				Enum.TryParse<IfcLogicalEnum>(token.Value<string>(), true, out mSelfIntersect);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, HashSet<int> processed)
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
-			base.setJSON(obj, host, processed);
-			obj["Points"] = Points.getJson(this, processed);
+			base.setJSON(obj, host, options);
+			obj["Points"] = Points.getJson(this, options);
 			if (mSegments.Count > 0)
 			{
 				JArray array = new JArray();
@@ -78,12 +98,12 @@ namespace GeometryGym.Ifc
 					JObject jobj = new JObject();
 					if (ai != null)
 					{
-						jobj["IfcArcIndex"] = ai.mA + " " + ai.mB + " " + ai.mC;
+						jobj["IfcArcIndex"] = ai[0] + " " + ai[1] + " " + ai[2];
 					}
 					else
 					{
 						IfcLineIndex li = seg as IfcLineIndex;
-						jobj["IfcLineIndex"] = string.Join(" ", li.mIndices.ConvertAll(x => x.ToString()));
+						jobj["IfcLineIndex"] = string.Join(" ", li.ConvertAll(x => x.ToString()));
 					}
 					array.Add(jobj);
 				}
@@ -120,19 +140,19 @@ namespace GeometryGym.Ifc
 			if (token != null)
 				double.TryParse(token.Value<string>(), out mFlangeSlope);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, HashSet<int> processed)
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
-			base.setJSON(obj, host, processed);
-			obj["OverallWidth"] = mOverallWidth;
-			obj["OverallDepth"] = mOverallDepth;
-			obj["WebThickness"] = mWebThickness;
-			obj["FlangeThickness"] = mFlangeThickness;
-			if (!double.IsNaN(mFilletRadius))
-				obj["FilletRadius"] = mFilletRadius;
-			if (!double.IsNaN(mFlangeEdgeRadius))
-				obj["FlangeEdgeRadius"] = mFlangeEdgeRadius;
-			if (!double.IsNaN(mFlangeSlope))
-				obj["FlangeSlope"] = mFlangeSlope;
+			base.setJSON(obj, host, options);
+			obj["OverallWidth"] = formatLength(mOverallWidth);
+			obj["OverallDepth"] = formatLength(mOverallDepth);
+			obj["WebThickness"] = formatLength(mWebThickness);
+			obj["FlangeThickness"] = formatLength(mFlangeThickness);
+			if (!double.IsNaN(mFilletRadius) && mFilletRadius > 0)
+				obj["FilletRadius"] = formatLength(mFilletRadius);
+			if (!double.IsNaN(mFlangeEdgeRadius) && mFlangeEdgeRadius > 0)
+				obj["FlangeEdgeRadius"] = formatLength(mFlangeEdgeRadius);
+			if (!double.IsNaN(mFlangeSlope) && mFlangeSlope > 0)
+				obj["FlangeSlope"] = formatLength(mFlangeSlope);
 		}
 	}
 }

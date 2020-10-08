@@ -27,33 +27,69 @@ using GeometryGym.STEP;
 
 namespace GeometryGym.Ifc
 {
-	public abstract partial class IfcNamedUnit : BaseClassIfc, IfcUnit //ABSTRACT SUPERTYPE OF (ONEOF(IfcContextDependentUnit,IfcConversionBasedUnit,IfcSIUnit));
+	[Serializable]
+	public abstract partial class IfcNamedUnit : BaseClassIfc, IfcUnit  //ABSTRACT SUPERTYPE OF (ONEOF(IfcContextDependentUnit,IfcConversionBasedUnit,IfcSIUnit));
 	{
-		internal int mDimensions;// : IfcDimensionalExponents;
+		internal IfcDimensionalExponents mDimensions = null;// : IfcDimensionalExponents;
 		private IfcUnitEnum mUnitType;// : IfcUnitEnum 
 
-		public IfcDimensionalExponents Dimensions { get { return mDatabase[mDimensions] as IfcDimensionalExponents;  } set { mDimensions = value.Index; } }
+		public IfcDimensionalExponents Dimensions { get { return mDimensions as IfcDimensionalExponents; } set { mDimensions = value; } }
 		public IfcUnitEnum UnitType { get { return mUnitType; } set { mUnitType = value; } }
 
 		protected IfcNamedUnit() : base() { }
-		protected IfcNamedUnit(DatabaseIfc db, IfcNamedUnit u) : base(db,u) { if(u.mDimensions > 0) Dimensions = db.Factory.Duplicate(u.Dimensions) as IfcDimensionalExponents; mUnitType = u.mUnitType; }
+		protected IfcNamedUnit(DatabaseIfc db, IfcNamedUnit u) : base(db, u) { if (u.mDimensions != null) Dimensions = db.Factory.Duplicate(u.Dimensions) as IfcDimensionalExponents; mUnitType = u.mUnitType; }
 		protected IfcNamedUnit(DatabaseIfc m, IfcUnitEnum unitEnum, bool gendims) : base(m)
 		{
 			mUnitType = unitEnum;
 			if (gendims)
 			{
 				if (unitEnum == IfcUnitEnum.LENGTHUNIT)
-					mDimensions = new IfcDimensionalExponents(m, 1, 0, 0, 0, 0, 0, 0).mIndex;
+					Dimensions = new IfcDimensionalExponents(m, 1, 0, 0, 0, 0, 0, 0);
 				else if (unitEnum == IfcUnitEnum.AREAUNIT)
-					mDimensions = new IfcDimensionalExponents(m, 2, 0, 0, 0, 0, 0, 0).mIndex;
+					Dimensions = new IfcDimensionalExponents(m, 2, 0, 0, 0, 0, 0, 0);
 				else if (unitEnum == IfcUnitEnum.VOLUMEUNIT)
-					mDimensions = new IfcDimensionalExponents(m, 3, 0, 0, 0, 0, 0, 0).mIndex;
+					Dimensions = new IfcDimensionalExponents(m, 3, 0, 0, 0, 0, 0, 0);
+				else if (unitEnum == IfcUnitEnum.MASSUNIT)
+					Dimensions = new IfcDimensionalExponents(m, 0, 1, 0, 0, 0, 0, 0);
+				else if (unitEnum == IfcUnitEnum.TIMEUNIT)
+					Dimensions = new IfcDimensionalExponents(m, 0, 0, 1, 0, 0, 0, 0);
+				else if (unitEnum == IfcUnitEnum.ELECTRICCURRENTUNIT)
+					Dimensions = new IfcDimensionalExponents(m, 0, 0, 0, 1, 0, 0, 0);
+				else if (unitEnum == IfcUnitEnum.THERMODYNAMICTEMPERATUREUNIT)
+					Dimensions = new IfcDimensionalExponents(m, 0, 0, 0, 0, 1, 0, 0);
+				else if (unitEnum == IfcUnitEnum.AMOUNTOFSUBSTANCEUNIT)
+					Dimensions = new IfcDimensionalExponents(m, 0, 0, 0, 0, 0, 1, 0);
+				else if (unitEnum == IfcUnitEnum.LUMINOUSINTENSITYUNIT)
+					Dimensions = new IfcDimensionalExponents(m, 0, 0, 0, 0, 0, 0, 1);
 				else if (unitEnum == IfcUnitEnum.PLANEANGLEUNIT)
-					mDimensions = new IfcDimensionalExponents(m, 0, 0, 0, 0, 0, 0, 0).mIndex;
+					Dimensions = new IfcDimensionalExponents(m, 0, 0, 0, 0, 0, 0, 0);
 			}
 		}
-		protected override string BuildStringSTEP() { return base.BuildStringSTEP() + "," + (mDimensions == 0 ? "*" : ParserSTEP.LinkToString(mDimensions)) + ",." + mUnitType.ToString() + "."; }
-		protected static void parseFields(IfcNamedUnit u, List<string> arrFields, ref int ipos) { u.mDimensions = ParserSTEP.ParseLink(arrFields[ipos++]); u.mUnitType = (IfcUnitEnum)Enum.Parse(typeof(IfcUnitEnum), arrFields[ipos++].Replace(".", "")); }
-		internal virtual double getSIFactor() { return 1; }
+		public IfcNamedUnit(IfcDimensionalExponents dimensions, IfcUnitEnum unitType)
+			: base(dimensions.Database) { Dimensions = dimensions; UnitType = unitType; }
+
+		public abstract double SIFactor { get; }
+	}
+	[Serializable]
+	public partial class IfcNavigationElement : IfcBuiltElement
+	{
+		private IfcNavigationElementTypeEnum mPredefinedType = IfcNavigationElementTypeEnum.NOTDEFINED; //: OPTIONAL IfcNavigationElementTypeEnum;
+		public IfcNavigationElementTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
+
+		public IfcNavigationElement() : base() { }
+		public IfcNavigationElement(DatabaseIfc db) : base(db) { }
+		public IfcNavigationElement(DatabaseIfc db, IfcNavigationElement navigationElement, DuplicateOptions options) : base(db, navigationElement, options) { PredefinedType = navigationElement.PredefinedType; }
+		public IfcNavigationElement(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+	}
+	[Serializable]
+	public partial class IfcNavigationElementType : IfcBuiltElementType
+	{
+		private IfcNavigationElementTypeEnum mPredefinedType = IfcNavigationElementTypeEnum.NOTDEFINED; //: IfcNavigationElementTypeEnum;
+		public IfcNavigationElementTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
+
+		public IfcNavigationElementType() : base() { }
+		public IfcNavigationElementType(DatabaseIfc db, IfcNavigationElementType navigationElementType, DuplicateOptions options) : base(db, navigationElementType, options) { PredefinedType = navigationElementType.PredefinedType; }
+		public IfcNavigationElementType(DatabaseIfc db, string name, IfcNavigationElementTypeEnum predefinedType)
+			: base(db, name) { PredefinedType = predefinedType; }
 	}
 }

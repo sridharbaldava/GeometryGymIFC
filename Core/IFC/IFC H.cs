@@ -27,6 +27,7 @@ using GeometryGym.STEP;
 
 namespace GeometryGym.Ifc
 {
+	[Serializable]
 	public partial class IfcHalfSpaceSolid : IfcGeometricRepresentationItem, IfcBooleanOperand /* SUPERTYPE OF (ONEOF (IfcBoxedHalfSpace ,IfcPolygonalBoundedHalfSpace)) */
 	{
 		private int mBaseSurface;// : IfcSurface;
@@ -36,93 +37,59 @@ namespace GeometryGym.Ifc
 		public bool AgreementFlag { get { return mAgreementFlag; } set { mAgreementFlag = value; } }
 
 		internal IfcHalfSpaceSolid() : base() { }
-		internal IfcHalfSpaceSolid(DatabaseIfc db, IfcHalfSpaceSolid h) : base(db,h) { BaseSurface = db.Factory.Duplicate(h.BaseSurface) as IfcSurface; mAgreementFlag = h.mAgreementFlag; }
+		internal IfcHalfSpaceSolid(DatabaseIfc db, IfcHalfSpaceSolid h, DuplicateOptions options) : base(db, h, options) { BaseSurface = db.Factory.Duplicate(h.BaseSurface, options) as IfcSurface; mAgreementFlag = h.mAgreementFlag; }
 		public IfcHalfSpaceSolid(IfcSurface baseSurface, bool agreementFlag) : base(baseSurface.mDatabase) { BaseSurface = baseSurface; AgreementFlag = agreementFlag; }
-
-		internal static IfcHalfSpaceSolid Parse(string str) { IfcHalfSpaceSolid s = new IfcHalfSpaceSolid(); int pos = 0; s.Parse(str, ref pos, str.Length); return s; }
-		protected virtual void Parse(string str, ref int pos, int len)
-		{
-			mBaseSurface = ParserSTEP.StripLink(str, ref pos, len);
-			mAgreementFlag = ParserSTEP.StripBool(str, ref pos, len);
-		}
-		protected override string BuildStringSTEP() { return base.BuildStringSTEP() + "," + ParserSTEP.LinkToString(mBaseSurface) + "," + ParserSTEP.BoolToString(mAgreementFlag); }
 	}
+	public interface IfcHatchLineDistanceSelect : IBaseClassIfc { } // SELECT(IfcPositiveLengthMeasure, IfcVector);
+	[Serializable]
 	public partial class IfcHeatExchanger : IfcEnergyConversionDevice //IFC4
 	{
 		internal IfcHeatExchangerTypeEnum mPredefinedType = IfcHeatExchangerTypeEnum.NOTDEFINED;// OPTIONAL : IfcHeatExchangerTypeEnum;
 		public IfcHeatExchangerTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
 
 		internal IfcHeatExchanger() : base() { }
-		internal IfcHeatExchanger(DatabaseIfc db, IfcHeatExchanger e) : base(db, e) { mPredefinedType = e.mPredefinedType; }
-		public IfcHeatExchanger(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductRepresentation representation, IfcDistributionSystem system) : base(host, placement, representation, system) { }
-
-		internal static void parseFields(IfcHeatExchanger s, List<string> arrFields, ref int ipos)
-		{
-			IfcEnergyConversionDevice.parseFields(s, arrFields, ref ipos);
-			string str = arrFields[ipos++];
-			if (str[0] == '.')
-				s.mPredefinedType = (IfcHeatExchangerTypeEnum)Enum.Parse(typeof(IfcHeatExchangerTypeEnum), str);
-		}
-		internal new static IfcHeatExchanger Parse(string strDef) { IfcHeatExchanger s = new IfcHeatExchanger(); int ipos = 0; parseFields(s, ParserSTEP.SplitLineFields(strDef), ref ipos); return s; }
-		protected override string BuildStringSTEP()
-		{
-			return base.BuildStringSTEP() + (mDatabase.mRelease == ReleaseVersion.IFC2x3 ? "" : (mPredefinedType == IfcHeatExchangerTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + "."));
-		}
+		internal IfcHeatExchanger(DatabaseIfc db, IfcHeatExchanger e, DuplicateOptions options) : base(db, e, options) { mPredefinedType = e.mPredefinedType; }
+		public IfcHeatExchanger(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation, IfcDistributionSystem system) : base(host, placement, representation, system) { }
 	}
+	[Serializable]
 	public partial class IfcHeatExchangerType : IfcEnergyConversionDeviceType
 	{
 		internal IfcHeatExchangerTypeEnum mPredefinedType = IfcHeatExchangerTypeEnum.NOTDEFINED;// : IfcHeatExchangerTypeEnum;
 		public IfcHeatExchangerTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
 
 		internal IfcHeatExchangerType() : base() { }
-		internal IfcHeatExchangerType(DatabaseIfc db, IfcHeatExchangerType t) : base(db, t) { mPredefinedType = t.mPredefinedType; }
-		internal IfcHeatExchangerType(DatabaseIfc m, string name, IfcHeatExchangerTypeEnum type) : base(m) { Name = name; mPredefinedType = type; }
-		internal static void parseFields(IfcHeatExchangerType t, List<string> arrFields, ref int ipos) { IfcEnergyConversionDeviceType.parseFields(t, arrFields, ref ipos); t.mPredefinedType = (IfcHeatExchangerTypeEnum)Enum.Parse(typeof(IfcHeatExchangerTypeEnum), arrFields[ipos++].Replace(".", "")); }
-		internal new static IfcHeatExchangerType Parse(string strDef) { IfcHeatExchangerType t = new IfcHeatExchangerType(); int ipos = 0; parseFields(t, ParserSTEP.SplitLineFields(strDef), ref ipos); return t; }
-		protected override string BuildStringSTEP() { return base.BuildStringSTEP() + ",." + mPredefinedType.ToString() + "."; }
+		internal IfcHeatExchangerType(DatabaseIfc db, IfcHeatExchangerType t, DuplicateOptions options) : base(db, t, options) { mPredefinedType = t.mPredefinedType; }
+		public IfcHeatExchangerType(DatabaseIfc m, string name, IfcHeatExchangerTypeEnum type) : base(m) { Name = name; mPredefinedType = type; }
 	}
+	[Serializable]
 	public partial class IfcHumidifier : IfcEnergyConversionDevice //IFC4
 	{
 		internal IfcHumidifierTypeEnum mPredefinedType = IfcHumidifierTypeEnum.NOTDEFINED;// OPTIONAL : IfcHumidifierTypeEnum;
 		public IfcHumidifierTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
 
 		internal IfcHumidifier() : base() { }
-		internal IfcHumidifier(DatabaseIfc db, IfcHumidifier h) : base(db,h) { mPredefinedType = h.mPredefinedType; }
-		public IfcHumidifier(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductRepresentation representation, IfcDistributionSystem system) : base(host, placement, representation, system) { }
-
-		internal static void parseFields(IfcHumidifier s, List<string> arrFields, ref int ipos)
-		{
-			IfcEnergyConversionDevice.parseFields(s, arrFields, ref ipos);
-			string str = arrFields[ipos++];
-			if (str[0] == '.')
-				s.mPredefinedType = (IfcHumidifierTypeEnum)Enum.Parse(typeof(IfcHumidifierTypeEnum), str);
-		}
-		internal new static IfcHumidifier Parse(string strDef) { IfcHumidifier s = new IfcHumidifier(); int ipos = 0; parseFields(s, ParserSTEP.SplitLineFields(strDef), ref ipos); return s; }
-		protected override string BuildStringSTEP()
-		{
-			return base.BuildStringSTEP() + (mDatabase.mRelease == ReleaseVersion.IFC2x3 ? "" : (mPredefinedType == IfcHumidifierTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + "."));
-		}
+		internal IfcHumidifier(DatabaseIfc db, IfcHumidifier h, DuplicateOptions options) : base(db,h, options) { mPredefinedType = h.mPredefinedType; }
+		public IfcHumidifier(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation, IfcDistributionSystem system) : base(host, placement, representation, system) { }
 	}
+	[Serializable]
 	public partial class IfcHumidifierType : IfcEnergyConversionDeviceType
 	{
 		internal IfcHumidifierTypeEnum mPredefinedType = IfcHumidifierTypeEnum.NOTDEFINED;// : IfcHumidifierExchangerEnum;
 		public IfcHumidifierTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
 		internal IfcHumidifierType() : base() { }
-		internal IfcHumidifierType(DatabaseIfc db, IfcHumidifierType t) : base(db, t) { mPredefinedType = t.mPredefinedType; }
-		internal IfcHumidifierType(DatabaseIfc m, string name, IfcHumidifierTypeEnum type) : base(m) { Name = name; mPredefinedType = type; }
-		internal static void parseFields(IfcHumidifierType t, List<string> arrFields, ref int ipos) { IfcEnergyConversionDeviceType.parseFields(t, arrFields, ref ipos); t.mPredefinedType = (IfcHumidifierTypeEnum)Enum.Parse(typeof(IfcHumidifierTypeEnum), arrFields[ipos++].Replace(".", "")); }
-		internal new static IfcHumidifierType Parse(string strDef) { IfcHumidifierType t = new IfcHumidifierType(); int ipos = 0; parseFields(t, ParserSTEP.SplitLineFields(strDef), ref ipos); return t; }
-		protected override string BuildStringSTEP() { return base.BuildStringSTEP() + ",." + mPredefinedType.ToString() + "."; }
+		internal IfcHumidifierType(DatabaseIfc db, IfcHumidifierType t, DuplicateOptions options) : base(db, t, options) { mPredefinedType = t.mPredefinedType; }
+		public IfcHumidifierType(DatabaseIfc m, string name, IfcHumidifierTypeEnum type) : base(m) { Name = name; mPredefinedType = type; }
 	}
-	[Obsolete("DEPRECEATED IFC4", false)]
-	public partial class IfcHygroscopicMaterialProperties : IfcMaterialPropertiesSuperSeded // DEPRECEATED IFC4
+	[Obsolete("DEPRECATED IFC4", false)]
+	[Serializable]
+	public partial class IfcHygroscopicMaterialProperties : IfcMaterialProperties // DEPRECATED IFC4
 	{
 		internal double mUpperVaporResistanceFactor = double.NaN, mLowerVaporResistanceFactor = double.NaN; //: OPTIONAL IfcPositiveRatioMeasure;
 		internal double mIsothermalMoistureCapacity = double.NaN; //: : OPTIONAL IfcIsothermalMoistureCapacityMeasure;
 		internal double mVaporPermeability = double.NaN;//: OPTIONAL IfcVaporPermeabilityMeasure;
 		internal double mMoistureDiffusivity = double.NaN;// : OPTIONAL IfcMoistureDiffusivityMeasure;*/
 		internal IfcHygroscopicMaterialProperties() : base() { }
-		internal IfcHygroscopicMaterialProperties(DatabaseIfc db, IfcHygroscopicMaterialProperties p) : base(db,p)
+		internal IfcHygroscopicMaterialProperties(DatabaseIfc db, IfcHygroscopicMaterialProperties p, DuplicateOptions options) : base(db, p, options)
 		{
 			mUpperVaporResistanceFactor = p.mUpperVaporResistanceFactor;
 			mLowerVaporResistanceFactor = p.mLowerVaporResistanceFactor;
@@ -130,16 +97,5 @@ namespace GeometryGym.Ifc
 			mVaporPermeability = p.mVaporPermeability;
 			mMoistureDiffusivity = p.mMoistureDiffusivity;
 		}
-		internal static IfcHygroscopicMaterialProperties Parse(string strDef) { IfcHygroscopicMaterialProperties p = new IfcHygroscopicMaterialProperties(); int ipos = 0; parseFields(p, ParserSTEP.SplitLineFields(strDef), ref ipos); return p; }
-		internal static void parseFields(IfcHygroscopicMaterialProperties p, List<string> arrFields, ref int ipos)
-		{
-			IfcMaterialPropertiesSuperSeded.parseFields(p, arrFields, ref ipos);
-			p.mUpperVaporResistanceFactor = ParserSTEP.ParseDouble(arrFields[ipos++]);
-			p.mLowerVaporResistanceFactor = ParserSTEP.ParseDouble(arrFields[ipos++]);
-			p.mIsothermalMoistureCapacity = ParserSTEP.ParseDouble(arrFields[ipos++]);
-			p.mVaporPermeability = ParserSTEP.ParseDouble(arrFields[ipos++]);
-			p.mMoistureDiffusivity = ParserSTEP.ParseDouble(arrFields[ipos++]);
-		}
-		protected override string BuildStringSTEP() { return base.BuildStringSTEP() + "," + ParserSTEP.DoubleOptionalToString(mUpperVaporResistanceFactor) + "," + ParserSTEP.DoubleOptionalToString(mLowerVaporResistanceFactor) + "," + ParserSTEP.DoubleOptionalToString(mIsothermalMoistureCapacity) + "," + ParserSTEP.DoubleOptionalToString(mVaporPermeability) + "," + ParserSTEP.DoubleOptionalToString(mMoistureDiffusivity); }
 	} 
 }

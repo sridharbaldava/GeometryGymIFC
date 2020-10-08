@@ -17,19 +17,46 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic; 
+using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
 using System.IO;
 using System.ComponentModel;
 using System.Linq;
-using System.Drawing;
 using GeometryGym.STEP;
 
+using Newtonsoft.Json.Linq;
 
 namespace GeometryGym.Ifc
 {
-	
-	
-
+	public partial class IfcKerb : IfcBuiltElement
+	{
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		{
+			base.setJSON(obj, host, options);
+			obj["Mountable"] = mMountable;
+		}
+		internal override void parseJObject(JObject obj)
+		{
+			base.parseJObject(obj);
+			JToken mountable = obj.GetValue("Mountable", StringComparison.InvariantCultureIgnoreCase);
+			if (mountable != null)
+				mMountable = mountable.Value<bool>();
+		}
+	}
+	public partial class IfcKerbType : IfcBuiltElementType
+	{
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		{
+			base.setJSON(obj, host, options);
+			obj["Mountable"] = mMountable;
+		}
+		internal override void parseJObject(JObject obj)
+		{
+			base.parseJObject(obj);
+			JToken mountable = obj.GetValue("Mountable", StringComparison.InvariantCultureIgnoreCase);
+			if (mountable != null)
+				mMountable = mountable.Value<bool>();
+		}
+	}
 }

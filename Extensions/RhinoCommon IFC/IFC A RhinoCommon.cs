@@ -44,12 +44,12 @@ namespace GeometryGym.Ifc
 	}
 	public partial interface IfcAxis2Placement : IBaseClassIfc //SELECT ( IfcAxis2Placement2D, IfcAxis2Placement3D);
 	{
-		Transform Transform { get; }
+		Transform Transform();
 		Plane Plane { get; }
 	}
 	public partial class IfcAxis2Placement2D : IfcPlacement, IfcAxis2Placement
 	{
-		internal Vector3d DirectionVector { get { return (mRefDirection > 0 ? RefDirection.Vector3d : Vector3d.XAxis); } }
+		internal Vector3d DirectionVector { get { return (mRefDirection != null ? RefDirection.Vector3d : Vector3d.XAxis); } }
 
 		internal IfcAxis2Placement2D(DatabaseIfc db, Point2d position, Vector2d dir) : base(db, position)
 		{
@@ -75,12 +75,12 @@ namespace GeometryGym.Ifc
 			double angTol = Math.PI / 1800;
 			if (plane.ZAxis.IsParallelTo(Vector3d.ZAxis, angTol) != 1)
 			{
-				Axis = new IfcDirection(db, plane.ZAxis);
-				RefDirection = new IfcDirection(db, plane.XAxis);
+				Axis = IfcDirection.convert(db, plane.ZAxis); 
+				RefDirection = IfcDirection.convert(db, plane.XAxis);
 			}
 			else if (plane.XAxis.IsParallelTo(Vector3d.XAxis, angTol) != 1)
 			{
-				RefDirection = new IfcDirection(db, plane.XAxis);
+				RefDirection = IfcDirection.convert(db, plane.XAxis);
 				Axis = db.Factory.ZAxis;
 			}
 		}
@@ -94,7 +94,11 @@ namespace GeometryGym.Ifc
 					Point3d orig = LocationPoint;
 					IfcDirection axis = Axis, refDirection = RefDirection;
 					Vector3d norm = axis == null ? Vector3d.ZAxis : axis.Vector3d;
+					if (norm.IsTiny())
+						norm = Vector3d.ZAxis;
 					Vector3d xaxis = refDirection == null ? Vector3d.XAxis : refDirection.Vector3d;
+					if (xaxis.IsTiny())
+						xaxis = Vector3d.XAxis;
 					Vector3d yAxis = Vector3d.CrossProduct(norm, xaxis);
 					mPlane = new Plane(orig, xaxis, yAxis);
 				}

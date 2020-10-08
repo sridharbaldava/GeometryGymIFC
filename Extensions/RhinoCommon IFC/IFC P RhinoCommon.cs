@@ -29,20 +29,17 @@ namespace GeometryGym.Ifc
 {
 	public abstract partial class IfcParameterizedProfileDef
 	{
-		internal override Transform Transform
+		internal override Transform Transform()
 		{
-			get { IfcAxis2Placement2D pos = Position; return (pos == null ? Transform.Identity : pos.Transform); }
+			IfcAxis2Placement2D pos = Position;
+			return (pos == null ? Rhino.Geometry.Transform.Identity : pos.Transform()); 
 		}
-
 	}
-	public partial class IfcPCurve : IfcCurve
+	public partial class IfcPcurve : IfcCurve
 	{
-		public override Curve Curve
+		public override Curve Curve(double tol)
 		{
-			get
-			{
-				throw new NotImplementedException();
-			}
+			throw new NotImplementedException();
 		}
 	}
 	public partial class IfcPlacement : IfcGeometricRepresentationItem /*ABSTRACT SUPERTYPE OF (ONEOF (IfcAxis1Placement ,IfcAxis2Placement2D ,IfcAxis2Placement3D))*/
@@ -52,8 +49,12 @@ namespace GeometryGym.Ifc
 		protected IfcPlacement(DatabaseIfc db, Point2d position) : base(db) { Location = new IfcCartesianPoint(db, position); }
 		protected IfcPlacement(DatabaseIfc db, Point3d position) : base(db) { Location = new IfcCartesianPoint(db, position); }
 
-		public Transform Transform { get { return Transform.ChangeBasis(Plane, Plane.WorldXY); } }
+		public Transform Transform() { return Rhino.Geometry.Transform.ChangeBasis(Plane, Plane.WorldXY); }
 		public abstract Plane Plane { get; }
+	}
+	public partial class IfcPlane : IfcElementarySurface
+	{
+		public Plane Plane { get { return Position.Plane; } }
 	}
 	public abstract partial class IfcPoint : IfcGeometricRepresentationItem, IfcGeometricSetSelect, IfcPointOrVertexPoint /*ABSTRACT SUPERTYPE OF (ONEOF (IfcCartesianPoint ,IfcPointOnCurve ,IfcPointOnSurface))*/
 	{
@@ -61,38 +62,34 @@ namespace GeometryGym.Ifc
 	}
 	public partial class IfcPolyline
 	{
-		internal IfcPolyline(DatabaseIfc db, Line l) : base(db) { addPoint(new IfcCartesianPoint(db, l.From)); addPoint( new IfcCartesianPoint(db, l.To)); }
+		internal IfcPolyline(DatabaseIfc db, Line l) : base(db) { Points.Add(new IfcCartesianPoint(db, l.From)); Points.Add( new IfcCartesianPoint(db, l.To)); }
 		internal IfcPolyline(DatabaseIfc db, Polyline pl) : base(db)
 		{
 			if (pl.IsClosed)
 			{
 				int ilast = pl.Count - 1;
 				IfcCartesianPoint cp = new IfcCartesianPoint(db, pl[0]);
-				addPoint(cp);
+				Points.Add(cp);
 				for (int icounter = 1; icounter < ilast; icounter++)
-					addPoint(new IfcCartesianPoint(db, pl[icounter]));
-				addPoint(cp);
+					Points.Add(new IfcCartesianPoint(db, pl[icounter]));
+				Points.Add(cp);
 			}
 			else
-			{
-				for (int icounter = 0; icounter < pl.Count; icounter++)
-					addPoint(new IfcCartesianPoint(db, pl[icounter]));
-			}
+				Points = new STEP.LIST<IfcCartesianPoint>(pl.ConvertAll(x => new IfcCartesianPoint(db, x)));
 		}
 	}
 	public abstract partial class IfcProduct : IfcObject, IfcProductSelect // ABSTRACT SUPERTYPE OF (ONEOF (IfcAnnotation ,IfcElement ,IfcGrid ,IfcPort ,IfcProxy ,IfcSpatialElement ,IfcStructuralActivity ,IfcStructuralItem))
 	{
-		internal Transform PlacementTransform
+		internal Transform PlacementTransform()
 		{
-			get
-			{
-				IfcObjectPlacement p = Placement;
-				return (p == null ? Transform.Identity : p.Transform);
-			}
+			IfcObjectPlacement p = ObjectPlacement;
+			if (p == null)
+				return Transform.Identity;
+			return p.Transform();
 		}
 	}
 	public partial class IfcProfileDef : BaseClassIfc, IfcResourceObjectSelect // SUPERTYPE OF (ONEOF (IfcArbitraryClosedProfileDef ,IfcArbitraryOpenProfileDef
 	{  //,IfcCompositeProfileDef ,IfcDerivedProfileDef ,IfcParameterizedProfileDef));  IFC2x3 abstract 
-		internal virtual Transform Transform { get { return Transform.Identity; } }
+		internal virtual Transform Transform() { return Rhino.Geometry.Transform.Identity; }
 	}
 }

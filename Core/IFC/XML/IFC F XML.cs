@@ -43,15 +43,15 @@ namespace GeometryGym.Ifc
 					{
 						IfcFaceBound f = mDatabase.ParseXml<IfcFaceBound>(cn as XmlElement);
 						if (f != null)
-							addBound(f);
+							Bounds.Add(f);
 					}
 				}
 			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
-			XmlElement element = xml.OwnerDocument.CreateElement("Bounds");
+			XmlElement element = xml.OwnerDocument.CreateElement("Bounds", mDatabase.mXmlNamespace);
 			xml.AppendChild(element);
 			foreach (IfcFaceBound face in Bounds)
 				element.AppendChild(face.GetXML(xml.OwnerDocument, "", this, processed));
@@ -71,15 +71,15 @@ namespace GeometryGym.Ifc
 					{
 						IfcConnectedFaceSet f = mDatabase.ParseXml<IfcConnectedFaceSet>(cn as XmlElement);
 						if (f != null)
-							addFace(f);
+							mFbsmFaces.Add(f);
 					}
 				}
 			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
-			XmlElement element = xml.OwnerDocument.CreateElement("FbsmFaces");
+			XmlElement element = xml.OwnerDocument.CreateElement("FbsmFaces", mDatabase.mXmlNamespace);
 			xml.AppendChild(element);
 			foreach (IfcConnectedFaceSet face in FbsmFaces)
 				element.AppendChild(face.GetXML(xml.OwnerDocument, "", this, processed));
@@ -100,7 +100,7 @@ namespace GeometryGym.Ifc
 			if (xml.HasAttribute("Orientation"))
 				mOrientation = bool.Parse(xml.Attributes["Orientation"].Value);
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			xml.AppendChild(Bound.GetXML(xml.OwnerDocument, "Bound", this, processed));
@@ -126,18 +126,16 @@ namespace GeometryGym.Ifc
 				}
 			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
-			XmlElement element = xml.OwnerDocument.CreateElement("Voids");
+			XmlElement element = xml.OwnerDocument.CreateElement("Voids", mDatabase.mXmlNamespace);
 			xml.AppendChild(element);
 			foreach (IfcClosedShell s in Voids)
 				element.AppendChild(s.GetXML(xml.OwnerDocument, "", this, processed));
 		}
 	}
-
-	
-	public partial class IfcFixedReferenceSweptAreaSolid : IfcSweptAreaSolid //IFC4
+	public partial class IfcFixedReferenceSweptAreaSolid : IfcDirectrixCurveSweptAreaSolid //IFC4
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -145,24 +143,13 @@ namespace GeometryGym.Ifc
 			foreach (XmlNode child in xml.ChildNodes)
 			{
 				string name = child.Name;
-				if (string.Compare(name, "Directrix") == 0)
-					Directrix = mDatabase.ParseXml<IfcCurve>(child as XmlElement);
-				else if (string.Compare(name, "FixedReference") == 0)
+				if (string.Compare(name, "FixedReference") == 0)
 					FixedReference = mDatabase.ParseXml<IfcDirection>(child as XmlElement);
 			}
-			if (xml.HasAttribute("StartParam"))
-				mStartParam = double.Parse(xml.Attributes["StartParam"].Value);
-			if (xml.HasAttribute("EndParam"))
-				mStartParam = double.Parse(xml.Attributes["EndParam"].Value);
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
-			xml.AppendChild(Directrix.GetXML(xml.OwnerDocument, "Directrix", this, processed));
-			if (!double.IsNaN(mStartParam))
-				xml.SetAttribute("StartParam", mStartParam.ToString());
-			if (!double.IsNaN(mEndParam))
-				xml.SetAttribute("EndParam", mEndParam.ToString());
 			xml.AppendChild(FixedReference.GetXML(xml.OwnerDocument, "FixedReference", this, processed));
 		}
 	}

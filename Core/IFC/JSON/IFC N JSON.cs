@@ -36,18 +36,49 @@ namespace GeometryGym.Ifc
 
 			JObject jobj = obj.GetValue("Dimensions", StringComparison.InvariantCultureIgnoreCase) as JObject;
 			if (jobj != null)
-				Dimensions = mDatabase.parseJObject<IfcDimensionalExponents>(jobj);
+				Dimensions = mDatabase.ParseJObject<IfcDimensionalExponents>(jobj);
 			JToken token = obj.GetValue("UnitType", StringComparison.InvariantCultureIgnoreCase);
 			if (token != null)
 				Enum.TryParse<IfcUnitEnum>(token.Value<string>(), out mUnitType);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host,  HashSet<int> processed)
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
-			base.setJSON(obj, host, processed);
+			base.setJSON(obj, host, options);
 			IfcDimensionalExponents exponents = Dimensions;
 			if(exponents != null)
-				obj["Dimensions"] = exponents.getJson(this, processed);
+				obj["Dimensions"] = exponents.getJson(this, options);
 			obj["UnitType"] = mUnitType.ToString();
+		}
+	}
+	public partial class IfcNavigationElement : IfcBuiltElement
+	{
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		{
+			base.setJSON(obj, host, options);
+			if (mPredefinedType != IfcNavigationElementTypeEnum.NOTDEFINED)
+				obj["PredefinedType"] = mPredefinedType.ToString();
+		}
+		internal override void parseJObject(JObject obj)
+		{
+			base.parseJObject(obj);
+			JToken token = obj.GetValue("PredefinedType", StringComparison.InvariantCultureIgnoreCase);
+			if (token != null)
+				Enum.TryParse<IfcNavigationElementTypeEnum>(token.Value<string>(), true, out mPredefinedType);
+		}
+	}
+	public partial class IfcNavigationElementType : IfcBuiltElementType
+	{
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		{
+			base.setJSON(obj, host, options);
+			obj["PredefinedType"] = mPredefinedType.ToString();
+		}
+		internal override void parseJObject(JObject obj)
+		{
+			base.parseJObject(obj);
+			JToken token = obj.GetValue("PredefinedType", StringComparison.InvariantCultureIgnoreCase);
+			if (token != null)
+				Enum.TryParse<IfcNavigationElementTypeEnum>(token.Value<string>(), true, out mPredefinedType);
 		}
 	}
 }

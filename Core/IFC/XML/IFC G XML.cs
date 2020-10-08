@@ -53,14 +53,14 @@ namespace GeometryGym.Ifc
 					{
 						IfcGeometricRepresentationSubContext sub = mDatabase.ParseXml<IfcGeometricRepresentationSubContext>(node as XmlElement);
 						if (sub != null)
-							sub.ContainerContext = this;
+							sub.ParentContext = this;
 					}
 				}
 				else if (string.Compare(name, "HasCoordinateOperation") == 0)
 					HasCoordinateOperation = mDatabase.ParseXml<IfcCoordinateOperation>(child as XmlElement);
 			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			if (this as IfcGeometricRepresentationSubContext == null)
@@ -68,14 +68,14 @@ namespace GeometryGym.Ifc
 				xml.SetAttribute("CoordinateSpaceDimension", mCoordinateSpaceDimension.ToString());
 				if (!double.IsNaN(mPrecision))
 					xml.SetAttribute("Precision", mPrecision.ToString());
-				if (mWorldCoordinateSystem > 0)
-					xml.AppendChild(mDatabase[mWorldCoordinateSystem].GetXML(xml.OwnerDocument, "WorldCoordinateSystem", this, processed));
-				if (mTrueNorth > 0)
+				if (mWorldCoordinateSystem != null)
+					xml.AppendChild(mDatabase[mWorldCoordinateSystem.Index].GetXML(xml.OwnerDocument, "WorldCoordinateSystem", this, processed));
+				if (mTrueNorth != null)
 					xml.AppendChild(TrueNorth.GetXML(xml.OwnerDocument, "TrueNorth", this, processed));
 			}
 			if (mHasSubContexts.Count > 0)
 			{
-				XmlElement element = xml.OwnerDocument.CreateElement("HasSubContexts");
+				XmlElement element = xml.OwnerDocument.CreateElement("HasSubContexts", mDatabase.mXmlNamespace);
 				foreach (IfcGeometricRepresentationSubContext sub in mHasSubContexts)
 					element.AppendChild(sub.GetXML(xml.OwnerDocument, "", this, processed));
 				xml.AppendChild(element);
@@ -93,8 +93,8 @@ namespace GeometryGym.Ifc
 			foreach (XmlNode child in xml.ChildNodes)
 			{
 				string name = child.Name;
-				if (string.Compare(name, "ContainerContext") == 0)
-					ContainerContext = mDatabase.ParseXml<IfcGeometricRepresentationContext>(child as XmlElement);
+				if (string.Compare(name, "ParentContext", true) == 0)
+					ParentContext = mDatabase.ParseXml<IfcGeometricRepresentationContext>(child as XmlElement);
 			}
 			if (xml.HasAttribute("TargetScale"))
 				TargetScale = double.Parse(xml.Attributes["TargetScale"].Value);
@@ -103,9 +103,11 @@ namespace GeometryGym.Ifc
 			if (xml.HasAttribute("UserDefinedTargetView"))
 				UserDefinedTargetView = xml.Attributes["UserDefinedTargetView"].Value;
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
+			if(host.StepId != ParentContext.StepId)
+				xml.AppendChild(ParentContext.GetXML(xml.OwnerDocument, "ParentContext", this, processed));
 			if (!double.IsNaN(mTargetScale))
 				xml.SetAttribute("TargetScale", mTargetScale.ToString());
 			xml.SetAttribute("TargetView", mTargetView.ToString().ToLower());
@@ -126,21 +128,21 @@ namespace GeometryGym.Ifc
 					{
 						IfcGeometricSetSelect e = mDatabase.ParseXml<IfcGeometricSetSelect>(cn as XmlElement);
 						if (e != null)
-							addElement(e);
+							mElements.Add(e);
 					}
 				}
 			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
-			XmlElement element = xml.OwnerDocument.CreateElement("Elements");
+			XmlElement element = xml.OwnerDocument.CreateElement("Elements", mDatabase.mXmlNamespace);
 			xml.AppendChild(element);
-			foreach (int i in mElements)
-				element.AppendChild(mDatabase[i].GetXML(xml.OwnerDocument, "", this, processed));
+			foreach (IfcGeometricSetSelect el in mElements)
+				element.AppendChild(mDatabase[el.Index].GetXML(xml.OwnerDocument, "", this, processed));
 		}
 	}
-	public partial class IfcGrid : IfcProduct
+	public partial class IfcGrid : IfcPositioningElement
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -150,11 +152,11 @@ namespace GeometryGym.Ifc
 			{
 				string name = child.Name;
 				if (string.Compare(name, "UAxes") == 0)
-					extractAxes(child).ForEach(x=>AddUAxis(x));
+					extractAxes(child).ForEach(x=>UAxes.Add(x));
 				else if (string.Compare(name, "VAxes") == 0)
-					extractAxes(child).ForEach(x=>AddVAxis(x));
+					extractAxes(child).ForEach(x=>VAxes.Add(x));
 				else if (string.Compare(name, "WAxes") == 0)
-					extractAxes(child).ForEach(x=>AddWAxis(x));
+					extractAxes(child).ForEach(x=>WAxes.Add(x));
 			}
 		}
 		internal List<IfcGridAxis> extractAxes(XmlNode node)
@@ -168,24 +170,24 @@ namespace GeometryGym.Ifc
 			}
 			return axes;
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			XmlElement uAxes = null, vAxes = null, wAxes = null;
 			if (mUAxes.Count > 0)
 			{
-				uAxes = xml.OwnerDocument.CreateElement("UAxes");
+				uAxes = xml.OwnerDocument.CreateElement("UAxes", mDatabase.mXmlNamespace);
 				foreach (IfcGridAxis a in UAxes)
 					uAxes.AppendChild(a.GetXML(xml.OwnerDocument, "", this, processed));
 			}
 			if (mVAxes.Count > 0)
 			{
-				vAxes = xml.OwnerDocument.CreateElement("VAxes");
+				vAxes = xml.OwnerDocument.CreateElement("VAxes", mDatabase.mXmlNamespace);
 				foreach (IfcGridAxis a in VAxes)
 					vAxes.AppendChild(a.GetXML(xml.OwnerDocument, "", this, processed));
 			}
 			if (mWAxes.Count > 0)
 			{
-				wAxes = xml.OwnerDocument.CreateElement("WAxes");
+				wAxes = xml.OwnerDocument.CreateElement("WAxes", mDatabase.mXmlNamespace);
 				foreach (IfcGridAxis a in WAxes)
 					wAxes.AppendChild(a.GetXML(xml.OwnerDocument, "", this, processed));
 			}
@@ -213,9 +215,13 @@ namespace GeometryGym.Ifc
 				string name = child.Name;
 				if (string.Compare(name, "AxisCurve") == 0)
 					AxisCurve = mDatabase.ParseXml<IfcCurve>(child as XmlElement);
+				else if (string.Compare(name, "AxisTag", true) == 0)
+					AxisTag = child.InnerText;
+				else if (string.Compare(name, "SameSense", true) == 0)
+					bool.TryParse(child.InnerText, out mSameSense);
 			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			if(mAxisTag != "$")
@@ -244,12 +250,12 @@ namespace GeometryGym.Ifc
 				
 			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			if (mIsGroupedBy.Count > 0)
 			{
-				XmlElement element = xml.OwnerDocument.CreateElement("IsGroupedBy");
+				XmlElement element = xml.OwnerDocument.CreateElement("IsGroupedBy", mDatabase.mXmlNamespace);
 				xml.AppendChild(element);
 				foreach (IfcRelAssignsToGroup rag in mIsGroupedBy)
 					element.AppendChild(rag.GetXML(xml.OwnerDocument, "", this, processed));

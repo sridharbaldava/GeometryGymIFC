@@ -47,12 +47,12 @@ namespace GeometryGym.Ifc
 					{
 						IfcRelDefinesByProperties rd = mDatabase.ParseXml<IfcRelDefinesByProperties>(node as XmlElement);
 						if (rd != null)
-							rd.AddRelated(this);
+							rd.RelatedObjects.Add(this);
 					}
 				}
 			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			setAttribute(xml, "ObjectType", ObjectType);
@@ -60,7 +60,7 @@ namespace GeometryGym.Ifc
 				xml.AppendChild(mIsTypedBy.GetXML(xml.OwnerDocument, "IsTypedBy", this, processed));
 			if (mIsDefinedBy.Count > 0)
 			{
-				XmlElement element = xml.OwnerDocument.CreateElement("IsDefinedBy");
+				XmlElement element = xml.OwnerDocument.CreateElement("IsDefinedBy", mDatabase.mXmlNamespace);
 				xml.AppendChild(element);
 				foreach (IfcRelDefinesByProperties rd in IsDefinedBy)
 					element.AppendChild(rd.GetXML(xml.OwnerDocument, "", this, processed));
@@ -81,7 +81,7 @@ namespace GeometryGym.Ifc
 					{
 						IfcRelAssigns ra = mDatabase.ParseXml<IfcRelAssigns>(node as XmlElement);
 						if (ra != null)
-							ra.AddRelated(this);
+							ra.RelatedObjects.Add(this);
 					}
 				}
 				else if (string.Compare(name, "IsNestedBy") == 0)
@@ -108,17 +108,17 @@ namespace GeometryGym.Ifc
 					{
 						IfcRelAssociates ra = mDatabase.ParseXml<IfcRelAssociates>(node as XmlElement);
 						if (ra != null)
-							ra.addRelated(this);
+							ra.RelatedObjects.Add(this);
 					}
 				}
 			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			if (mHasAssignments.Count > 0)
 			{
-				XmlElement element = xml.OwnerDocument.CreateElement("HasAssignments");
+				XmlElement element = xml.OwnerDocument.CreateElement("HasAssignments", mDatabase.mXmlNamespace);
 				foreach (IfcRelAssigns rap in mHasAssignments)
 				{
 					if (rap.mIndex != host.mIndex)
@@ -129,25 +129,25 @@ namespace GeometryGym.Ifc
 			}
 			if (mIsNestedBy.Count > 0)
 			{
-				XmlElement element = xml.OwnerDocument.CreateElement("IsNestedBy");
+				XmlElement element = xml.OwnerDocument.CreateElement("IsNestedBy", mDatabase.mXmlNamespace);
 				xml.AppendChild(element);
 				foreach (IfcRelNests rn in IsNestedBy)
 					element.AppendChild(rn.GetXML(xml.OwnerDocument, "", this, processed));
 			}
 			if (mIsDecomposedBy.Count > 0)
 			{
-				XmlElement element = xml.OwnerDocument.CreateElement("IsDecomposedBy");
+				XmlElement element = xml.OwnerDocument.CreateElement("IsDecomposedBy", mDatabase.mXmlNamespace);
 				xml.AppendChild(element);
 				foreach (IfcRelAggregates rags in IsDecomposedBy)
 					element.AppendChild(rags.GetXML(xml.OwnerDocument, "", this, processed));
 			}
-			if (mHasAssociations.Count > 0)
-			{
-				XmlElement element = xml.OwnerDocument.CreateElement("HasAssociations");
-				xml.AppendChild(element);
-				foreach (IfcRelAssociates ra in HasAssociations)
-					element.AppendChild(ra.GetXML(xml.OwnerDocument, "", this, processed));
-			}
+			//if (mHasAssociations.Count > 0)
+			//{
+			//	XmlElement element = xml.OwnerDocument.CreateElement("HasAssociations", mDatabase.mXmlNamespace);
+			//	xml.AppendChild(element);
+			//	foreach (IfcRelAssociates ra in HasAssociations)
+			//		element.AppendChild(ra.GetXML(xml.OwnerDocument, "", this, processed));
+			//}
 		}
 	}
 	public partial class IfcObjective : IfcConstraint
@@ -177,12 +177,12 @@ namespace GeometryGym.Ifc
 			if (xml.HasAttribute("UserDefinedQualifier"))
 				UserDefinedQualifier = xml.Attributes["UserDefinedQualifier"].Value;
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			if (mBenchmarkValues.Count > 0)
 			{
-				XmlElement element = xml.OwnerDocument.CreateElement("BenchmarkValues");
+				XmlElement element = xml.OwnerDocument.CreateElement("BenchmarkValues", mDatabase.mXmlNamespace);
 				xml.AppendChild(element);
 				foreach (IfcConstraint constraint in BenchmarkValues)
 					element.AppendChild(constraint.GetXML(xml.OwnerDocument, "", this, processed));
@@ -193,6 +193,57 @@ namespace GeometryGym.Ifc
 				setAttribute(xml, "UserDefinedQualifier", UserDefinedQualifier);
 			}
 
+		}
+	}
+	public abstract partial class IfcObjectPlacement : BaseClassIfc  //	 ABSTRACT SUPERTYPE OF (ONEOF (IfcGridPlacement ,IfcLocalPlacement));
+	{
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			foreach (XmlNode child in xml.ChildNodes)
+			{
+				string name = child.Name;
+				if (string.Compare(name, "PlacementRelTo") == 0)
+					PlacementRelTo = mDatabase.ParseXml<IfcObjectPlacement>(child as XmlElement);
+			}
+		}
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			if (mPlacementRelTo != null)
+				xml.AppendChild(mPlacementRelTo.GetXML(xml.OwnerDocument, "PlacementRelTo", this, processed));
+		}
+	}
+	public partial class IfcOpenCrossProfileDef : IfcProfileDef
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			xml.SetAttribute("HorizontalWidths", (mHorizontalWidths ? "true" : "false"));
+			XmlElement element = xml.OwnerDocument.CreateElement("Tags", mDatabase.mXmlNamespace);
+			xml.AppendChild(element);
+			//foreach (IfcLabel o in Tags)
+			//	element.AppendChild(o.GetXML(xml.OwnerDocument, "", this, processed));
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			string horizontalWidths = xml.GetAttribute("HorizontalWidths");
+			if (!string.IsNullOrEmpty(horizontalWidths))
+				bool.TryParse(horizontalWidths, out mHorizontalWidths);
+			foreach (XmlNode child in xml.ChildNodes)
+			{
+				string name = child.Name;
+				if (string.Compare(name, "Tags") == 0)
+				{
+					foreach (XmlNode cn in child.ChildNodes)
+					{
+			//			IfcLabel o = mDatabase.ParseXml<IfcLabel>(cn as XmlElement);
+			//			if (o != null)
+			//				Tags.Add(o);
+					}
+				}
+			}
 		}
 	}
 	public partial class IfcOpeningElement : IfcFeatureElementSubtraction //SUPERTYPE OF(IfcOpeningStandardCase)
@@ -216,14 +267,14 @@ namespace GeometryGym.Ifc
 				}
 			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			if (mPredefinedType != IfcOpeningElementTypeEnum.NOTDEFINED)
 				xml.SetAttribute("PredefinedType", mPredefinedType.ToString().ToLower());
 			if (mHasFillings.Count > 0)
 			{
-				XmlElement element = xml.OwnerDocument.CreateElement("HasFillings");
+				XmlElement element = xml.OwnerDocument.CreateElement("HasFillings", mDatabase.mXmlNamespace);
 				foreach (IfcRelFillsElement fills in mHasFillings)
 				{
 					if (fills.mIndex != host.mIndex)
@@ -248,46 +299,85 @@ namespace GeometryGym.Ifc
 			foreach (XmlNode child in xml.ChildNodes)
 			{
 				string name = child.Name;
-				if (string.Compare(name, "Roles") == 0)
+				if (string.Compare(name, "Roles", true) == 0)
 				{
 					foreach (XmlNode cn in child.ChildNodes)
 					{
 						IfcActorRole role = mDatabase.ParseXml<IfcActorRole>(cn as XmlElement);
 						if (role != null)
-							AddRole(role);
+							Roles.Add(role);
 					}
 				}
-				else if (string.Compare(name, "Addresses") == 0)
+				else if (string.Compare(name, "Addresses", true) == 0)
 				{
 					foreach (XmlNode cn in child.ChildNodes)
 					{
 						IfcAddress address = mDatabase.ParseXml<IfcAddress>(cn as XmlElement);
 						if (address != null)
-							AddAddress(address);
+							Addresses.Add(address);
 					}
 				}
+				else if (string.Compare(name, "Identification", true) == 0)
+					Identification = child.InnerText;
+				else if (string.Compare(name, "Name", true) == 0)
+					Name = child.InnerText;
+				else if (string.Compare(name, "Description", true) == 0)
+					Description = child.InnerText;
+				else if (string.Compare(name, "Id", true) == 0)
+					Identification = child.InnerText;
 			}
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			setAttribute(xml, "Identification", Identification);
 			setAttribute(xml, "Name", Name);
 			setAttribute(xml, "Description", Description);
-			if(mRoles.Count > 0)
+			if (mRoles.Count > 0)
 			{
-				XmlElement element = xml.OwnerDocument.CreateElement("Roles");
+				XmlElement element = xml.OwnerDocument.CreateElement("Roles", mDatabase.mXmlNamespace);
 				xml.AppendChild(element);
 				foreach (IfcActorRole role in Roles)
 					element.AppendChild(role.GetXML(xml.OwnerDocument, "", this, processed));
 			}
-			if(mAddresses.Count > 0)
+			if (mAddresses.Count > 0)
 			{
-				XmlElement element = xml.OwnerDocument.CreateElement("Addresses");
+				XmlElement element = xml.OwnerDocument.CreateElement("Addresses", mDatabase.mXmlNamespace);
 				xml.AppendChild(element);
 				foreach (IfcAddress address in Addresses)
 					element.AppendChild(address.GetXML(xml.OwnerDocument, "", this, processed));
 			}
+		}
+	}
+	public partial class IfcOrganizationRelationship : IfcResourceLevelRelationship //IFC4
+	{
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			foreach (XmlNode child in xml.ChildNodes)
+			{
+				string name = child.Name;
+				if (string.Compare(name, "RelatingOrganization") == 0)
+					RelatingOrganization = mDatabase.ParseXml<IfcOrganization>(child as XmlElement);
+				else if (string.Compare(name, "RelatedOrganizations") == 0)
+				{
+					foreach (XmlNode cn in child.ChildNodes)
+					{
+						IfcOrganization o = mDatabase.ParseXml<IfcOrganization>(cn as XmlElement);
+						if (o != null)
+							RelatedOrganizations.Add(o);
+					}
+				}
+			}
+		}
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			xml.AppendChild(RelatingOrganization.GetXML(xml.OwnerDocument, "RelatingOrganization", this, processed));
+			XmlElement element = xml.OwnerDocument.CreateElement("RelatedOrganizations", mDatabase.mXmlNamespace);
+			xml.AppendChild(element);
+			foreach (IfcOrganization o in RelatedOrganizations)
+				element.AppendChild(o.GetXML(xml.OwnerDocument, "", this, processed));
 		}
 	}
 	public partial class IfcOwnerHistory : BaseClassIfc
@@ -312,24 +402,24 @@ namespace GeometryGym.Ifc
 			if (xml.HasAttribute("ChangeAction"))
 				Enum.TryParse<IfcChangeActionEnum>(xml.Attributes["ChangeAction"].Value,true, out mChangeAction);
 			if (xml.HasAttribute("LastModifiedDate"))
-				LastModifiedDate = int.Parse(xml.Attributes["LastModifiedDate"].Value);
+				mLastModifiedDate = int.Parse(xml.Attributes["LastModifiedDate"].Value);
 			if (xml.HasAttribute("CreationDate"))
-				CreationDate = int.Parse(xml.Attributes["CreationDate"].Value);
+				mCreationDate = int.Parse(xml.Attributes["CreationDate"].Value);
 		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<int, XmlElement> processed)
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
 			
 			xml.AppendChild(OwningUser.GetXML(xml.OwnerDocument, "OwningUser", this, processed));
 			xml.AppendChild(OwningApplication.GetXML(xml.OwnerDocument, "OwningApplication", this, processed));
-			if (mState != IfcStateEnum.NA)
+			if (mState != IfcStateEnum.NOTDEFINED)
 				xml.SetAttribute("State", mState.ToString().ToLower());
 			xml.SetAttribute("ChangeAction", mChangeAction.ToString().ToLower());
 			if (mLastModifiedDate > 0)
 				xml.SetAttribute("LastModifiedDate", mLastModifiedDate.ToString());
-			if(mLastModifyingUser > 0)
+			if(mLastModifyingUser != null)
 				xml.AppendChild(LastModifyingUser.GetXML(xml.OwnerDocument, "LastModifyingUser", this, processed));
-			if (mLastModifyingApplication > 0)
+			if (mLastModifyingApplication != null)
 				xml.AppendChild(LastModifyingApplication.GetXML(xml.OwnerDocument, "LastModifyingApplication", this, processed));
 			xml.SetAttribute("CreationDate", mCreationDate.ToString());
 		}

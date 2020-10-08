@@ -22,6 +22,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,6 +32,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -53,11 +55,11 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
@@ -108,6 +110,9 @@
     <Compile Include="..\..\Core\IFC\IFC J.cs">
       <Link>IFC\Core\IFC J.cs</Link>
     </Compile>
+    <Compile Include="..\..\Core\IFC\IFC K.cs">
+      <Link>IFC\Core\IFC K.cs</Link>
+    </Compile>
     <Compile Include="..\..\Core\IFC\IFC L.cs">
       <Link>IFC\Core\IFC L.cs</Link>
     </Compile>
@@ -129,9 +134,6 @@
     <Compile Include="..\..\Core\IFC\IFC R.cs">
       <Link>IFC\Core\IFC R.cs</Link>
     </Compile>
-    <Compile Include="..\..\Core\IFC\IFC Relationship.cs">
-      <Link>IFC\Core\IFC Relationship.cs</Link>
-    </Compile>
     <Compile Include="..\..\Core\IFC\IFC S.cs">
       <Link>IFC\Core\IFC S.cs</Link>
     </Compile>
@@ -146,6 +148,12 @@
     </Compile>
     <Compile Include="..\..\Core\IFC\IFC W.cs">
       <Link>IFC\Core\IFC W.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\IFC X.cs">
+      <Link>IFC\Core\IFC X.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\IFC Y.cs">
+      <Link>IFC\Core\IFC Y.cs</Link>
     </Compile>
     <Compile Include="..\..\Core\IFC\IFC Z.cs">
       <Link>IFC\Core\IFC Z.cs</Link>
@@ -185,6 +193,9 @@
     </Compile>
     <Compile Include="..\..\Core\IFC\JSON\IFC J JSON.cs">
       <Link>IFC\JSON\IFC J JSON.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\JSON\IFC K JSON.cs">
+      <Link>IFC\JSON\IFC K JSON.cs</Link>
     </Compile>
     <Compile Include="..\..\Core\IFC\JSON\IFC L JSON.cs">
       <Link>IFC\JSON\IFC L JSON.cs</Link>
@@ -234,6 +245,90 @@
     <Compile Include="..\..\Core\IFC\Quantity Sets.cs">
       <Link>IFC\Core\Quantity Sets.cs</Link>
     </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\BaseClassIFC STEP.cs">
+      <Link>IFC\Core\STEP\BaseClassIFC STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC A STEP.cs">
+      <Link>IFC\Core\STEP\IFC A STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC B STEP.cs">
+      <Link>IFC\Core\STEP\IFC B STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC C STEP.cs">
+      <Link>IFC\Core\STEP\IFC C STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC D STEP.cs">
+      <Link>IFC\Core\STEP\IFC D STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC E STEP.cs">
+      <Link>IFC\Core\STEP\IFC E STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC F STEP.cs">
+      <Link>IFC\Core\STEP\IFC F STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC G STEP.cs">
+      <Link>IFC\Core\STEP\IFC G STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC H STEP.cs">
+      <Link>IFC\Core\STEP\IFC H STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC I STEP.cs">
+      <Link>IFC\Core\STEP\IFC I STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC J STEP.cs">
+      <Link>IFC\Core\STEP\IFC J STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC K STEP.cs">
+      <Link>IFC\Core\STEP\IFC K STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC L STEP.cs">
+      <Link>IFC\Core\STEP\IFC L STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC M STEP.cs">
+      <Link>IFC\Core\STEP\IFC M STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC N STEP.cs">
+      <Link>IFC\Core\STEP\IFC N STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC O STEP.cs">
+      <Link>IFC\Core\STEP\IFC O STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC P STEP.cs">
+      <Link>IFC\Core\STEP\IFC P STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC Q STEP.cs">
+      <Link>IFC\Core\STEP\IFC Q STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC R STEP.cs">
+      <Link>IFC\Core\STEP\IFC R STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC S STEP.cs">
+      <Link>IFC\Core\STEP\IFC S STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC T STEP.cs">
+      <Link>IFC\Core\STEP\IFC T STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC U STEP.cs">
+      <Link>IFC\Core\STEP\IFC U STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC V STEP.cs">
+      <Link>IFC\Core\STEP\IFC V STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC W STEP.cs">
+      <Link>IFC\Core\STEP\IFC W STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC X STEP.cs">
+      <Link>IFC\Core\STEP\IFC X STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC Y STEP.cs">
+      <Link>IFC\Core\STEP\IFC Y STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\STEP\IFC Z STEP.cs">
+      <Link>IFC\Core\STEP\IFC Z STEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\Validate.cs">
+      <Link>IFC\Validate.cs</Link>
+    </Compile>
     <Compile Include="..\..\Core\IFC\XML\BaseClassIFC XML.cs">
       <Link>IFC\XML\BaseClassIFC XML.cs</Link>
     </Compile>
@@ -269,6 +364,9 @@
     </Compile>
     <Compile Include="..\..\Core\IFC\XML\IFC J XML.cs">
       <Link>IFC\XML\IFC J XML.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\XML\IFC K XML.cs">
+      <Link>IFC\XML\IFC K XML.cs</Link>
     </Compile>
     <Compile Include="..\..\Core\IFC\XML\IFC L XML.cs">
       <Link>IFC\XML\IFC L XML.cs</Link>
@@ -309,8 +407,14 @@
     <Compile Include="..\..\Core\IFC\XML\IFC Z XML.cs">
       <Link>IFC\XML\IFC Z XML.cs</Link>
     </Compile>
+    <Compile Include="..\..\Core\MVD\MVD.cs">
+      <Link>MVD\MVD.cs</Link>
+    </Compile>
     <Compile Include="..\..\Core\STEP\BaseClassSTEP.cs">
       <Link>STEP\BaseClassSTEP.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\STEP\CollectionsSTEP.cs">
+      <Link>STEP\CollectionsSTEP.cs</Link>
     </Compile>
     <Compile Include="..\..\Core\STEP\DatabaseSTEP.cs">
       <Link>STEP\DatabaseSTEP.cs</Link>
