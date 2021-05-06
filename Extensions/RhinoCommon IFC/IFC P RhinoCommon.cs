@@ -27,34 +27,9 @@ using Rhino.Geometry;
 
 namespace GeometryGym.Ifc
 {
-	public abstract partial class IfcParameterizedProfileDef
-	{
-		internal override Transform Transform()
-		{
-			IfcAxis2Placement2D pos = Position;
-			return (pos == null ? Rhino.Geometry.Transform.Identity : pos.Transform()); 
-		}
-	}
-	public partial class IfcPcurve : IfcCurve
-	{
-		public override Curve Curve(double tol)
-		{
-			throw new NotImplementedException();
-		}
-	}
 	public partial class IfcPlacement : IfcGeometricRepresentationItem /*ABSTRACT SUPERTYPE OF (ONEOF (IfcAxis1Placement ,IfcAxis2Placement2D ,IfcAxis2Placement3D))*/
 	{
-		internal Point3d LocationPoint { get { return Location.Location; } }
-
-		protected IfcPlacement(DatabaseIfc db, Point2d position) : base(db) { Location = new IfcCartesianPoint(db, position); }
-		protected IfcPlacement(DatabaseIfc db, Point3d position) : base(db) { Location = new IfcCartesianPoint(db, position); }
-
-		public Transform Transform() { return Rhino.Geometry.Transform.ChangeBasis(Plane, Plane.WorldXY); }
-		public abstract Plane Plane { get; }
-	}
-	public partial class IfcPlane : IfcElementarySurface
-	{
-		public Plane Plane { get { return Position.Plane; } }
+		internal Point3d LocationPoint { get { return mLocation.Location; } }
 	}
 	public abstract partial class IfcPoint : IfcGeometricRepresentationItem, IfcGeometricSetSelect, IfcPointOrVertexPoint /*ABSTRACT SUPERTYPE OF (ONEOF (IfcCartesianPoint ,IfcPointOnCurve ,IfcPointOnSurface))*/
 	{
@@ -76,16 +51,6 @@ namespace GeometryGym.Ifc
 			}
 			else
 				Points = new STEP.LIST<IfcCartesianPoint>(pl.ConvertAll(x => new IfcCartesianPoint(db, x)));
-		}
-	}
-	public abstract partial class IfcProduct : IfcObject, IfcProductSelect // ABSTRACT SUPERTYPE OF (ONEOF (IfcAnnotation ,IfcElement ,IfcGrid ,IfcPort ,IfcProxy ,IfcSpatialElement ,IfcStructuralActivity ,IfcStructuralItem))
-	{
-		internal Transform PlacementTransform()
-		{
-			IfcObjectPlacement p = ObjectPlacement;
-			if (p == null)
-				return Transform.Identity;
-			return p.Transform();
 		}
 	}
 	public partial class IfcProfileDef : BaseClassIfc, IfcResourceObjectSelect // SUPERTYPE OF (ONEOF (IfcArbitraryClosedProfileDef ,IfcArbitraryOpenProfileDef

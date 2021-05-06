@@ -128,6 +128,7 @@ namespace GeometryGym.Ifc
 		public bool IsMilestone { get { return mIsMilestone; } set { mIsMilestone = value; } }
 		public int Priority { get { return mPriority; } set { mPriority = value; } }
 		internal IfcTaskTime TaskTime { get { return mDatabase[mTaskTime] as IfcTaskTime; } set { mTaskTime = value == null ? 0 : value.mIndex; } }
+		public IfcTaskTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
 
 		internal IfcTask() : base() { }
 		internal IfcTask(DatabaseIfc db, IfcTask t, DuplicateOptions options) : base(db, t, options)
@@ -261,16 +262,12 @@ namespace GeometryGym.Ifc
 			mAnchorageSlip = t.mAnchorageSlip;
 			mMinCurvatureRadius = t.mMinCurvatureRadius;
 		}
-		public IfcTendon(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation, double diam, double area, double forceMeasure, double pretress, double fricCoeff, double anchorSlip, double minCurveRadius)
+		public IfcTendon(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		public IfcTendon(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation, double diam, double area)
 			: base(host, placement, representation)
 		{
 			mNominalDiameter = diam;
 			mCrossSectionArea = area;
-			mTensionForce = forceMeasure;
-			mPreStress = pretress;
-			mFrictionCoefficient = fricCoeff;
-			mAnchorageSlip = anchorSlip;
-			mMinCurvatureRadius = minCurveRadius;
 		}
 	}
 	[Serializable]
@@ -302,7 +299,7 @@ namespace GeometryGym.Ifc
 		public IfcTendonConduit() : base() { }
 		public IfcTendonConduit(DatabaseIfc db, IfcTendonConduitTypeEnum predefinedType)
 			: base(db) { PredefinedType = predefinedType; }
-		public IfcTendonConduit(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation, IfcTendonConduitTypeEnum predefinedType) : base(host, placement, representation) { }
+		public IfcTendonConduit(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
 	}
 	[Serializable]
 	public partial class IfcTendonConduitType : IfcReinforcingElementType
@@ -354,12 +351,12 @@ namespace GeometryGym.Ifc
 		internal List<IfcIndexedTextureMap> mHasTextures = new List<IfcIndexedTextureMap>();// : SET [0:?] OF IfcIndexedTextureMap FOR MappedTo;
 
 		public IfcCartesianPointList Coordinates { get { return mCoordinates; } set { mCoordinates = value; } }
-		public IfcIndexedColourMap HasColours { get { return mHasColours; } }
+		public IfcIndexedColourMap HasColours { get { return mHasColours; } set { mHasColours = value; } }
 		public ReadOnlyCollection<IfcIndexedTextureMap> HasTextures { get { return new ReadOnlyCollection<IfcIndexedTextureMap>(mHasTextures); } }
 
 		protected IfcTessellatedFaceSet() : base() { }
 		protected IfcTessellatedFaceSet(DatabaseIfc db, IfcTessellatedFaceSet s, DuplicateOptions options) : base(db, s, options) { Coordinates = db.Factory.Duplicate(s.Coordinates) as IfcCartesianPointList; }
-		protected IfcTessellatedFaceSet(IfcCartesianPointList3D pl) : base(pl.mDatabase) { Coordinates = pl; }
+		protected IfcTessellatedFaceSet(IfcCartesianPointList pl) : base(pl.mDatabase) { Coordinates = pl; }
 	}
 	[Serializable]
 	public abstract partial class IfcTessellatedItem : IfcGeometricRepresentationItem //IFC4
@@ -709,6 +706,7 @@ namespace GeometryGym.Ifc
 		internal IfcTransformerType(DatabaseIfc db, IfcTransformerType t, DuplicateOptions options) : base(db, t, options) { mPredefinedType = t.mPredefinedType; }
 		public IfcTransformerType(DatabaseIfc m, string name, IfcTransformerTypeEnum type) : base(m) { Name = name; mPredefinedType = type; }
 	}
+	[Obsolete("DEPRECATED IFC4X3", false)]
 	[Serializable]
 	public partial class IfcTransitionCurveSegment2D : IfcCurveSegment2D  //IFC4x1
 	{
@@ -859,6 +857,7 @@ namespace GeometryGym.Ifc
 		public IfcTrimmingPreference MasterRepresentation { get { return mMasterRepresentation; } set { mMasterRepresentation = value; } }
 
 		internal IfcTrimmedCurve() : base() { }
+		internal IfcTrimmedCurve(DatabaseIfc db) : base(db) { }
 		internal IfcTrimmedCurve(DatabaseIfc db, IfcTrimmedCurve c, DuplicateOptions options) : base(db, c, options)
 		{
 			BasisCurve = db.Factory.Duplicate(c.BasisCurve) as IfcCurve;
@@ -875,8 +874,10 @@ namespace GeometryGym.Ifc
 			: this(basis.mDatabase, start,end, senseAgreement,tp) { BasisCurve = basis; }
 		public IfcTrimmedCurve(IfcLine basis, IfcTrimmingSelect start, IfcTrimmingSelect end, bool senseAgreement, IfcTrimmingPreference tp)
 			: this(basis.mDatabase, start, end, senseAgreement, tp) { BasisCurve = basis; }
-		//public IfcTrimmedCurve(IfcClothoid basis, IfcTrimmingSelect start, IfcTrimmingSelect end, bool senseAgreement, IfcTrimmingPreference tp)
-		//	: this(basis.Database, start, end, senseAgreement, tp) { BasisCurve = basis; }
+		public IfcTrimmedCurve(IfcPolynomialCurve basis, IfcTrimmingSelect start, IfcTrimmingSelect end, bool senseAgreement, IfcTrimmingPreference tp)
+			: this(basis.Database, start, end, senseAgreement, tp) { BasisCurve = basis; }
+		public IfcTrimmedCurve(IfcClothoid basis, IfcTrimmingSelect start, IfcTrimmingSelect end, bool senseAgreement, IfcTrimmingPreference tp)
+			: this(basis.Database, start, end, senseAgreement, tp) { BasisCurve = basis; }
 		private IfcTrimmedCurve(DatabaseIfc db, IfcTrimmingSelect start, IfcTrimmingSelect end, bool senseAgreement, IfcTrimmingPreference tp) : base(db)
 		{
 			mTrim1 = start;
@@ -1037,12 +1038,15 @@ namespace GeometryGym.Ifc
 		protected IfcTypeObject(IfcTypeObject basis) : base(basis, false) { mApplicableOccurrence = basis.mApplicableOccurrence; mHasPropertySets = basis.mHasPropertySets; mObjectTypeOf = basis.mObjectTypeOf; }
 		protected IfcTypeObject(DatabaseIfc db, IfcTypeObject t, DuplicateOptions options) : base(db, t, options) 
 		{ 
-			mApplicableOccurrence = t.mApplicableOccurrence; 
-			foreach(IfcPropertySetDefinition pset in t.HasPropertySets)
+			mApplicableOccurrence = t.mApplicableOccurrence;
+			if (options.DuplicateProperties)
 			{
-				IfcPropertySetDefinition duplicatePset = db.Factory.DuplicatePropertySet(pset, options);
-				if (duplicatePset != null)
-					HasPropertySets.Add(duplicatePset);
+				foreach (IfcPropertySetDefinition pset in t.HasPropertySets)
+				{
+					IfcPropertySetDefinition duplicatePset = db.Factory.DuplicatePropertySet(pset, options);
+					if (duplicatePset != null)
+						HasPropertySets.Add(duplicatePset);
+				}
 			}
 		}
 		[Obsolete("DEPRECATED IFC4", false)]
@@ -1203,8 +1207,9 @@ namespace GeometryGym.Ifc
 				}
 				else
 				{
+					List<IfcPropertySetDefinition> list = psets.ToList();
 					foreach (int i in r.mListPositions)
-						result.AddRange(psets[i - 1].retrieveReference(ir));
+						result.AddRange(list[i - 1].retrieveReference(ir));
 				}
 				return result;
 			}
@@ -1366,8 +1371,8 @@ namespace GeometryGym.Ifc
 					{
 						IfcDistributionPort newPort = new IfcDistributionPort(element) { FlowDirection = port.FlowDirection, PredefinedType = port.PredefinedType, SystemType = port.SystemType };
 						newPort.ObjectPlacement = new IfcLocalPlacement(element.ObjectPlacement, (port.ObjectPlacement as IfcLocalPlacement).RelativePlacement);
-						for (int dcounter = 0; dcounter < port.mIsDefinedBy.Count; dcounter++)
-							port.mIsDefinedBy[dcounter].RelatedObjects.Add(newPort);
+						foreach (IfcRelDefinesByProperties rdp in port.mIsDefinedBy)
+							rdp.RelatedObjects.Add(newPort);
 					}
 				}
 			}
@@ -1394,7 +1399,7 @@ namespace GeometryGym.Ifc
 			if (!str.ToLower().EndsWith("Type"))
 				str = str + "Type";
 			IfcTypeProduct result = null;
-			Type type = Type.GetType("GeometryGym.Ifc." + str);
+			Type type = BaseClassIfc.GetType(str);
 			if (type != null)
 			{
 				Type enumType = Type.GetType("GeometryGym.Ifc." + type.Name + "Enum");

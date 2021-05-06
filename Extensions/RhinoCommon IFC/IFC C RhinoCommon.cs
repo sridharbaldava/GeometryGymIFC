@@ -84,10 +84,18 @@ namespace GeometryGym.Ifc
 			if (mAxis2 > 0)
 			{
 				vy = Axis2.Vector3d;
-				tr.M01 = vy.X;
-				tr.M11 = vy.Y;
-				tr.M21 = vy.Z;
 			}
+			else
+			{
+				IfcCartesianTransformationOperator2D placement2D = this as IfcCartesianTransformationOperator2D;
+				if(placement2D != null)
+				{
+					vy = Vector3d.CrossProduct(Vector3d.ZAxis, vx);
+				}
+			}
+			tr.M01 = vy.X;
+			tr.M11 = vy.Y;
+			tr.M21 = vy.Z;
 			return tr;
 		}
 	}
@@ -112,40 +120,15 @@ namespace GeometryGym.Ifc
 	{
 		internal override Transform getScaleTransform(Point3d location) { return Rhino.Geometry.Transform.Scale(new Plane(location, Vector3d.XAxis, Vector3d.YAxis), Scale, Scale2, Scale3); }
 	}
-	public partial class IfcCompositeCurve : IfcBoundedCurve
-	{
-		
-		
-	}
-	public partial class IfcCircle : IfcConic
-	{
-		public override Curve Curve(double tol) { return new ArcCurve(Circle); }
-		public Circle Circle { get { return new Circle(Plane, mRadius); } }
-	}
 	public partial class IfcCompositeCurveSegment
 	{
 		//internal IfcCompositeCurveSegment(DatabaseIfc db, Curve c, bool sense, IfcTransitionCode tc, bool twoD, IfcCartesianPoint optStrt, out IfcCartesianPoint end)
 		//	: this(tc, sense, IfcBoundedCurve.convCurve(db, c, optStrt, twoD, out end)) { }
-	}
-	public abstract partial class IfcConic : IfcCurve /*ABSTRACT SUPERTYPE OF (ONEOF (IfcCircle ,IfcEllipse))*/
-	{
-		public Transform Transform { get { return (mPosition > 0 ? Position.Transform() : Transform.Translation(0, 0, 0)); } }
-		public Plane Plane { get { return (mPosition > 0 ? Position.Plane : Plane.WorldXY); } }
 	}
 	public partial class IfcConnectionPointEccentricity
 	{
 		internal Vector3d Eccentricity { get { return new Vector3d(double.IsNaN(mEccentricityInX) ? 0 : mEccentricityInX, double.IsNaN(mEccentricityInY) ? 0 : mEccentricityInY, double.IsNaN(mEccentricityInZ) ? 0 : mEccentricityInZ); } }
 
 		internal IfcConnectionPointEccentricity(IfcPointOrVertexPoint v, Vector3d ecc) : base(v) { mEccentricityInX = ecc.X; mEccentricityInY = ecc.Y; mEccentricityInZ = ecc.Z; }
-	}
-	public abstract partial class IfcCurve : IfcGeometricRepresentationItem, IfcGeometricSetSelect /*ABSTRACT SUPERTYPE OF (ONEOF (IfcBoundedCurve ,IfcConic ,IfcLine ,IfcOffsetCurve2D ,IfcOffsetCurve3D,IfcPcurve,IfcClothoid))*/
-	{
-		public Curve Curve() { return Curve(mDatabase == null ? 1e-5 : mDatabase.Tolerance); }
-		public abstract Curve Curve(double tol);
-
-		internal virtual Plane planeAt(IfcDistanceExpression distanceExpression, bool vertical, double tol)
-		{
-			throw new Exception("PlaneAt DistanceExpression not implemented for " + this.StepClassName);
-		}
 	}
 }

@@ -42,7 +42,97 @@ namespace GeometryGym.Ifc
 	[Serializable()]
 	public abstract partial class BaseClassIfc : STEPEntity, IBaseClassIfc
 	{
-		internal string mGlobalId = ""; // :	IfcGloballyUniqueId;
+		internal string mGlobalId { get; private set; } = ""; // :	IfcGloballyUniqueId;
+		internal void setGlobalId(string globalId)
+		{
+			if (string.IsNullOrEmpty(mGlobalId))
+			{
+				mGlobalId = globalId;
+				return;
+			}
+			if(string.Compare(mGlobalId, globalId, false) != 0)
+			{
+				GlobalIdChangeManager idChangeManager = new GlobalIdChangeManager(this);
+				mGlobalId = globalId;
+				idChangeManager.updateReferences();
+			}
+		}
+		private class GlobalIdChangeManager
+		{
+			BaseClassIfc mObject = null;
+			List<IfcRelDefinesByProperties> mIsDefinedBy = new List<IfcRelDefinesByProperties>();
+			IfcRelAggregates mDecomposes = null;
+			IfcRelNests mNests = null;
+			IfcRelContainedInSpatialStructure mContainedIn = null;
+			internal GlobalIdChangeManager(BaseClassIfc obj)
+			{
+				mObject = obj;
+				IfcObjectDefinition objectDefinition = obj as IfcObjectDefinition;
+				if(objectDefinition != null)
+				{
+					mIsDefinedBy.AddRange(objectDefinition.mIsDefinedBy);
+					foreach (IfcRelDefinesByProperties rdp in mIsDefinedBy)
+						rdp.RelatedObjects.Remove(objectDefinition);
+
+					mDecomposes = objectDefinition.mDecomposes;
+					if (mDecomposes != null)
+						mDecomposes.RelatedObjects.Remove(objectDefinition);
+					mNests = objectDefinition.mNests;
+					if (mNests != null)
+						mNests.RelatedObjects.Remove(objectDefinition);
+
+					IfcObject o = mObject as IfcObject;
+					if (o != null)
+					{
+						IfcProduct product = objectDefinition as IfcProduct;
+						if (product != null)
+						{
+							mContainedIn = product.mContainedInStructure;
+							if (mContainedIn != null)
+								mContainedIn.RelatedElements.Remove(product);
+						}
+					}
+				}
+			}
+
+			internal void updateReferences()
+			{
+				IfcObjectDefinition objectDefinition = mObject as IfcObjectDefinition;
+				if(objectDefinition != null)
+				{
+					foreach (IfcRelDefinesByProperties isDefinedBy in mIsDefinedBy)
+						isDefinedBy.RelatedObjects.Add(objectDefinition);
+
+					if (mDecomposes != null)
+						mDecomposes.RelatedObjects.Add(objectDefinition);
+					if (mNests != null)
+						mNests.RelatedObjects.Add(objectDefinition);
+
+					IfcObject obj = mObject as IfcObject;
+					if (obj != null)
+					{
+						IfcProduct product = objectDefinition as IfcProduct;
+						if (product != null)
+						{
+							if (mContainedIn != null)
+								mContainedIn.RelatedElements.Add(product);
+						}
+					}
+				}
+			}
+		}
+		protected void ChangeGlobalId(string newGlobalId, string oldGlobalId) 
+		{
+			IfcObjectDefinition objectDefinition = this as IfcObjectDefinition;
+			if(objectDefinition != null)
+			{
+				List<IfcRelDefinesByProperties> isDefinedBy = objectDefinition.mIsDefinedBy.ToList();
+				foreach(IfcRelDefinesByProperties definedBy in isDefinedBy)
+				{
+					definedBy.RelatedObjects.Remove(objectDefinition);
+				}
+			}
+		}
 
 		[NonSerialized] internal DatabaseIfc mDatabase = null;
 
@@ -76,7 +166,6 @@ namespace GeometryGym.Ifc
 		}
 
 		protected virtual void parseFields(List<string> arrFields, ref int ipos) { }
-		internal virtual void postParseRelate() { }
 
 		public List<T> Extract<T>() where T : IBaseClassIfc
 		{
@@ -179,6 +268,25 @@ namespace GeometryGym.Ifc
 					foreach (IfcRelNests rel in thisObjectDefinition.IsNestedBy.ToList())
 						rel.RelatingObject = revisedObjectDefinition;
 
+					IfcRelAggregates relAggregates = thisObjectDefinition.Decomposes;
+					if(relAggregates != null)
+					{
+						relAggregates.RelatedObjects.Remove(thisObjectDefinition);
+						relAggregates.RelatedObjects.Add(revisedObjectDefinition);
+					}
+					IfcRelNests relNests = thisObjectDefinition.Nests;
+					if(relNests != null)
+					{
+						relNests.RelatedObjects.Remove(thisObjectDefinition);
+						relNests.RelatedObjects.Add(thisObjectDefinition);
+					}
+
+					foreach (IfcRelDefinesByProperties relDefinesByProperties in thisObjectDefinition.mIsDefinedBy.ToList())
+					{
+						relDefinesByProperties.RelatedObjects.Remove(thisObjectDefinition);
+						relDefinesByProperties.RelatedObjects.Add(revisedObjectDefinition);
+					}
+
 					foreach (IfcRelAssigns assigns in thisObjectDefinition.HasAssignments.ToList())
 					{
 						assigns.RelatedObjects.Remove(thisObjectDefinition);
@@ -198,18 +306,54 @@ namespace GeometryGym.Ifc
 					IfcObject thisObject = this as IfcObject, revisedObject = revised as IfcObject;
 					if (thisObject != null && revisedObject != null)
 					{
-						revisedObject.ObjectType = thisObject.ObjectType;
+						if(!string.IsNullOrEmpty(thisObject.ObjectType))
+							revisedObject.ObjectType = thisObject.ObjectType;
 
 						if (thisObject.mIsTypedBy != null)
 							thisObject.mIsTypedBy.mRelatedObjects.Remove(thisObject);
 						IfcProduct thisProduct = this as IfcProduct, revisedProduct = revised as IfcProduct;
 						if (thisProduct != null && revisedProduct != null)
 						{
-							thisProduct.detachFromHost();
+							IfcRelContainedInSpatialStructure containedInSpatialStructure = thisProduct.mContainedInStructure;
+							if (containedInSpatialStructure != null)
+							{
+								containedInSpatialStructure.RelatedElements.Remove(thisProduct);
+								containedInSpatialStructure.RelatedElements.Add(revisedProduct);
+							}
 							IfcElement thisElement = this as IfcElement, revisedElement = revised as IfcElement;
 							if (thisElement != null && revisedElement != null)
 							{
 								revisedElement.Tag = thisElement.Tag;
+							}
+							IfcSpatialElement thisSpatial = this as IfcSpatialElement, revisedSpatial = revised as IfcSpatialElement;
+							if(thisSpatial != null && revisedSpatial != null)
+							{
+								foreach(IfcRelContainedInSpatialStructure contained in thisSpatial.ContainsElements.ToList())
+									contained.RelatingStructure = revisedSpatial;
+							}
+							else if (revisedSpatial != null && thisElement != null)
+							{
+								if(containedInSpatialStructure != null)
+								{
+									containedInSpatialStructure.RelatedElements.Remove(revisedProduct);
+									containedInSpatialStructure.RelatingStructure.AddAggregated(revisedProduct);
+								}
+								List<IfcProduct> subProducts = thisObjectDefinition.IsDecomposedBy.SelectMany(x => x.RelatedObjects).OfType<IfcProduct>().ToList();
+								if(subProducts.Count > 0)
+								{
+									new IfcRelContainedInSpatialStructure(subProducts, revisedSpatial);
+								}
+								foreach (IfcRelAssociatesMaterial associates in revisedSpatial.HasAssociations.OfType<IfcRelAssociatesMaterial>().ToList())
+									associates.RelatedObjects.Remove(revisedSpatial);
+
+								IfcFacilityPart facilityPart = revisedSpatial as IfcFacilityPart;
+								if(facilityPart != null)
+								{
+									IfcFacility facility = revisedSpatial.FindHost<IfcFacility>();
+									if (facility != null)
+										facility.AddAggregated(revisedSpatial);
+								}
+
 							}
 						}
 					}
@@ -276,7 +420,14 @@ namespace GeometryGym.Ifc
 
 		public static Type GetType(string classNameIfc)
 		{
-			return STEPEntity.GetType(classNameIfc, "Ifc");	
+			string className = classNameIfc;
+			if (string.Compare(className, "IfcBuildingElement", true) == 0)
+				className = "IfcBuiltElement";
+			else if (string.Compare(className, "IfcBuildingElementType", true) == 0)
+				className = "IfcBuiltElementType";
+			else if (string.Compare(className, "IfcBuildingSystem", true) == 0)
+				className = "IfcBuiltSystem";
+			return STEPEntity.GetType(className, "Ifc");	
 		}
 		public static BaseClassIfc Construct(string ifcClassName)
 		{
@@ -284,6 +435,8 @@ namespace GeometryGym.Ifc
 			string className = ifcClassName;
 			if (string.Compare(className, "IfcBuildingElement", true) == 0)
 				className = "IfcBuildingElementProxy";
+			if (string.Compare(className, "IfcDistanceExpression", true) == 0)
+				className = "IfcPointByDistanceExpression";
 
 			if (!mConstructors.TryGetValue(className, out constructor))
 			{
@@ -388,7 +541,6 @@ namespace GeometryGym.Ifc
 					File.SetLastWriteTime(filePath, modified);
 			}
 			catch (Exception) { }
-			
 		}
 	}
 	public partial interface IBaseClassIfc : ISTEPEntity

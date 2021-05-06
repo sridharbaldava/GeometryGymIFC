@@ -45,7 +45,21 @@ namespace GeometryGym.Ifc
 	}
 	public partial class IfcRailway : IfcFacility
 	{
-		public override string StepClassName { get { if (mDatabase != null && mDatabase.Release < ReleaseVersion.IFC4X3) return "IfcFacility"; return base.StepClassName; } }
+		public override string StepClassName { get { if (mDatabase != null && mDatabase.Release < ReleaseVersion.IFC4X3_RC1) return "IfcFacility"; return base.StepClassName; } }
+		protected override string BuildStringSTEP(ReleaseVersion release)
+		{
+			return base.BuildStringSTEP(release) + (release < ReleaseVersion.IFC4X3_RC3 ? "" : (mPredefinedType == IfcRailwayTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + "."));
+		}
+		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
+		{
+			base.parse(str, ref pos, release, len, dictionary);
+			if (release > ReleaseVersion.IFC4X3_RC2)
+			{
+				string s = ParserSTEP.StripField(str, ref pos, len);
+				if (s.StartsWith("."))
+					Enum.TryParse<IfcRailwayTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+			}
+		}
 	}
 	public partial class IfcRailType : IfcBuiltElementType
 	{
@@ -553,7 +567,7 @@ namespace GeometryGym.Ifc
 		{
 			if (mRelatedObjects.Count == 0)
 				return "";
-			return base.BuildStringSTEP(release) + ",#" + mRelatingObject.StepId + ",(#" + string.Join(",#", RelatedObjects.Select(x => x.Index)) + ")";
+			return base.BuildStringSTEP(release) + ",#" + mRelatingObject.StepId + ",(#" + string.Join(",#", RelatedObjects.OrderBy(x=>x.StepId).Select(x => x.Index)) + ")";
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
@@ -586,14 +600,7 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mTimeForTask = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			IfcScheduleTimeControl t = TimeForTask;
-			if (t != null)
-				t.mScheduleTimeControlAssigned = this;
+			TimeForTask = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcScheduleTimeControl;
 		}
 	}
 	public partial class IfcRelAssignsToActor : IfcRelAssigns
@@ -609,18 +616,11 @@ namespace GeometryGym.Ifc
 	}
 	public partial class IfcRelAssignsToControl : IfcRelAssigns
 	{
-		protected override string BuildStringSTEP(ReleaseVersion release) { return (mDatabase.ModelView == ModelView.Ifc2x3Coordination || mRelatedObjects.Count == 0 ? "" : base.BuildStringSTEP(release) + "," + ParserSTEP.LinkToString(mRelatingControl)); }
+		protected override string BuildStringSTEP(ReleaseVersion release) { return (mDatabase.ModelView == ModelView.Ifc2x3Coordination || mRelatedObjects.Count == 0 ? "" : base.BuildStringSTEP(release) + ",#" + mRelatingControl.StepId); }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingControl = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			IfcControl c = RelatingControl;
-			if (c != null)
-				c.mControls.Add(this);
+			RelatingControl = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcControl;
 		}
 	}
 	public partial class IfcRelAssignsToGroup : IfcRelAssigns   //SUPERTYPE OF(IfcRelAssignsToGroupByFactor)
@@ -651,15 +651,8 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingProcess = ParserSTEP.StripLink(str, ref pos, len);
+			RelatingProcess = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcProcessSelect;
 			mQuantityInProcess = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcMeasureWithUnit;
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			IfcProcessSelect p = RelatingProcess;
-			if (p != null)
-				p.OperatesOn.Add(this);
 		}
 	}
 	public partial class IfcRelAssignsToProduct : IfcRelAssigns
@@ -679,14 +672,7 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingResource = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			IfcResourceSelect r = RelatingResource;
-			if (r != null)
-				r.ResourceOf.Add(this);
+			RelatingResource = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcResourceSelect;
 		}
 	}
 	public abstract partial class IfcRelAssociates : IfcRelationship   //ABSTRACT SUPERTYPE OF (ONEOF(IfcRelAssociatesApproval,IfcRelAssociatesclassification,IfcRelAssociatesConstraint,IfcRelAssociatesDocument,IfcRelAssociatesLibrary,IfcRelAssociatesMaterial))
@@ -735,12 +721,7 @@ namespace GeometryGym.Ifc
 		{
 			base.parse(str, ref pos, release, len, dictionary);
 			mIntent = ParserSTEP.StripString(str, ref pos, len);
-			mRelatingConstraint = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			RelatingConstraint.mConstraintForObjects.Add(this);
+			RelatingConstraint = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcConstraint;
 		}
 	}
 	public partial class IfcRelAssociatesDocument : IfcRelAssociates
@@ -765,21 +746,15 @@ namespace GeometryGym.Ifc
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
-			if (release < ReleaseVersion.IFC4 && string.IsNullOrEmpty(RelatingMaterial.ToString()))
+			string baseString = base.BuildStringSTEP(release);
+			if (string.IsNullOrEmpty(baseString) || (release < ReleaseVersion.IFC4 && string.IsNullOrEmpty(RelatingMaterial.ToString())))
 				return "";
-			return base.BuildStringSTEP(release) + ",#" + mRelatingMaterial;
+			return baseString + ",#" + mRelatingMaterial;
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingMaterial = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			IfcMaterialSelect ms = RelatingMaterial;
-			if (ms != null)
-				ms.AssociatedTo.Add(this);
+			RelatingMaterial = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcMaterialSelect;
 		}
 	}
 	public partial class IfcRelAssociatesProfileDef : IfcRelAssociates
@@ -798,7 +773,7 @@ namespace GeometryGym.Ifc
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
-			if (mRelatedObjects.Count == 0)
+			if (release > ReleaseVersion.IFC2x3 || mRelatedObjects.Count == 0)
 				return "";
 			string str = base.BuildStringSTEP(release) + "," + ParserSTEP.LinkToString(mRelatingProfileProperties) + "," +
 				ParserSTEP.LinkToString(mProfileSectionLocation) + ",";
@@ -868,15 +843,9 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingPort = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedPort = ParserSTEP.StripLink(str, ref pos, len);
+			RelatingPort = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcPort;
+			RelatedPort = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcPort;
 			mRealizingElement = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			RelatedPort.mConnectedFrom = this;
-			RelatingPort.mConnectedTo = this;
 		}
 	}
 	public partial class IfcRelConnectsPortToElement : IfcRelConnects
@@ -892,39 +861,22 @@ namespace GeometryGym.Ifc
 	}
 	public partial class IfcRelConnectsStructuralActivity : IfcRelConnects
 	{
-		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + "," + ParserSTEP.LinkToString(mRelatingElement) + "," + ParserSTEP.LinkToString(mRelatedStructuralActivity); }
+		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + ",#" + mRelatingElement.StepId + ",#" + mRelatedStructuralActivity.StepId; }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingElement = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedStructuralActivity = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			RelatedStructuralActivity.AssignedToStructuralItem = this;
-			IfcStructuralActivityAssignmentSelect saa = RelatingElement;
-			saa.AssignStructuralActivity(this);
+			RelatingElement = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcStructuralActivityAssignmentSelect;
+			RelatedStructuralActivity = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcStructuralActivity;
 		}
 	}
 	public partial class IfcRelConnectsStructuralElement : IfcRelConnects //DELETED IFC4 Replaced by IfcRelAssignsToProduct
 	{
-		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + "," + ParserSTEP.LinkToString(mRelatingElement) + "," + ParserSTEP.LinkToString(mRelatedStructuralMember); }
+		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + ",#" + mRelatingElement.StepId + ",#" + mRelatedStructuralMember.StepId; }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingElement = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedStructuralMember = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			IfcElement element = RelatingElement;
-			if (element != null)
-				element.mHasStructuralMember.Add(this);
-			IfcStructuralMember member = RelatedStructuralMember;
-			if (member != null)
-				member.mStructuralMemberForGG = this;
+			RelatingElement = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcElement;
+			RelatedStructuralMember = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcStructuralMember;
 		}
 	}
 	public partial class IfcRelConnectsStructuralMember : IfcRelConnects
@@ -939,22 +891,12 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingStructuralMember = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedStructuralConnection = ParserSTEP.StripLink(str, ref pos, len);
+			RelatingStructuralMember = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcStructuralMember;
+			RelatedStructuralConnection = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcStructuralConnection;
 			mAppliedCondition = ParserSTEP.StripLink(str, ref pos, len);
 			mAdditionalConditions = ParserSTEP.StripLink(str, ref pos, len);
 			mSupportedLength = ParserSTEP.StripDouble(str, ref pos, len);
 			mConditionCoordinateSystem = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			IfcStructuralMember m = RelatingStructuralMember;
-			if (m != null)
-				m.mConnectedBy.Add(this);
-			IfcStructuralConnection c = mDatabase[mRelatedStructuralConnection] as IfcStructuralConnection;
-			if (c != null)
-				c.mConnectsStructuralMembers.Add(this);
 		}
 	}
 	public partial class IfcRelConnectsWithEccentricity : IfcRelConnectsStructuralMember
@@ -987,7 +929,7 @@ namespace GeometryGym.Ifc
 		{
 			if (mRelatedElements.Count <= 0)
 				return "";
-			return base.BuildStringSTEP(release) + ",(#" + string.Join(",#", mRelatedElements.ConvertAll(x => x.Index.ToString())) + "),#" + mRelatingStructure.mIndex;
+			return base.BuildStringSTEP(release) + ",(#" + string.Join(",#", mRelatedElements.OrderBy(x=>x.StepId).Select(x => x.StepId.ToString())) + "),#" + mRelatingStructure.mIndex;
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
@@ -1000,46 +942,24 @@ namespace GeometryGym.Ifc
 				}
 				catch (Exception x) { mDatabase.logParseError("XXX Error in line #" + StepId + " " + StepClassName + " " + x.Message); }
 			}
-			mRelatingStructure = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcSpatialElement;
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			IfcSpatialElement se = RelatingStructure;
-			if (se != null)
-				se.mContainsElements.Add(this);
+			RelatingStructure = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcSpatialElement;
 		}
 	}
 	public partial class IfcRelCoversBldgElements : IfcRelConnects //IFC4 DEPRECATION  The relationship IfcRelCoversBldgElements shall not be used anymore, use IfcRelAggregates instead.
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
-			string str = base.BuildStringSTEP(release) + "," + ParserSTEP.LinkToString(mRelatingBuildingElement) + ",(";
-			if (mRelatedCoverings.Count > 0)
-			{
-				str += ParserSTEP.LinkToString(mRelatedCoverings[0]);
-				for (int icounter = 1; icounter < mRelatedCoverings.Count; icounter++)
-					str += "," + ParserSTEP.LinkToString(mRelatedCoverings[icounter]);
-			}
-			else
+			if (mRelatedCoverings.Count == 0)
 				return "";
-			return str + ")";
+			return base.BuildStringSTEP(release) + ",#" + mRelatingBuildingElement.StepId + ",(#" +
+				string.Join(",#", mRelatedCoverings.Select(x => x.StepId)) + ")";
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingBuildingElement = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedCoverings = ParserSTEP.StripListLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			IfcElement e = RelatingBuildingElement;
-			if (e != null)
-				e.mHasCoverings.Add(this);
-			ReadOnlyCollection<IfcCovering> coverings = RelatedCoverings;
-			for (int icounter = 0; icounter < coverings.Count; icounter++)
-				coverings[icounter].mCoversElements = this;
+			RelatingBuildingElement = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcElement;
+			foreach (IfcCovering covering in ParserSTEP.StripListLink(str, ref pos, len).Select(x => dictionary[x] as IfcCovering))
+				addCovering(covering);
 		}
 	}
 	public partial class IfcRelCoversSpaces : IfcRelConnects //IFC4 DEPRECATION  The relationship IfcRelCoversSpace shall not be used anymore, use IfcRelContainedInSpatialStructure instead.
@@ -1086,25 +1006,9 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatedObjects = ParserSTEP.StripListLink(str, ref pos, len);
-			mRelatingObject = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			if (mRelatingObject > 0)
-			{
-				IfcObject ot = mDatabase[mRelatingObject] as IfcObject;
-				if (ot != null)
-					ot.mIsDeclaredBy = this;
-			}
-			ReadOnlyCollection<IfcObject> objects = RelatedObjects;
-			for (int icounter = 0; icounter < objects.Count; icounter++)
-			{
-				IfcObject o = objects[icounter];
-				if (o != null)
-					o.mDeclares.Add(this);
-			}
+			foreach (IfcObject o in ParserSTEP.StripListLink(str, ref pos, len).Select(x => dictionary[x] as IfcObject))
+				addRelated(o);
+			RelatingObject = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcObject;
 		}
 	}
 	public partial class IfcRelDefinesByProperties : IfcRelDefines
@@ -1120,7 +1024,7 @@ namespace GeometryGym.Ifc
 		{
 			base.parse(str, ref pos, release, len, dictionary);
 			RelatedObjects.AddRange(ParserSTEP.StripListLink(str, ref pos, len).ConvertAll(x => dictionary[x] as IfcObjectDefinition));
-			mRelatingPropertyDefinition = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcPropertySetDefinition;
+			RelatingPropertyDefinition = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcPropertySetDefinition;
 		}
 	}
 	public partial class IfcRelDefinesByTemplate : IfcRelDefines //IFC4
@@ -1137,25 +1041,9 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatedPropertySets = ParserSTEP.StripListLink(str, ref pos, len);
-			mRelatingTemplate = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			if (mRelatingTemplate > 0)
-			{
-				IfcPropertySetTemplate rt = RelatingTemplate;
-				if (rt != null)
-					rt.mDefines.Add(this);
-			}
-			ReadOnlyCollection<IfcPropertySetDefinition> psets = RelatedPropertySets;
-			for (int icounter = 0; icounter < psets.Count; icounter++)
-			{
-				IfcPropertySetDefinition pset = psets[icounter];
-				if (pset != null)
-					pset.mIsDefinedBy.Add(this);
-			}
+			foreach (IfcPropertySetDefinition pset in ParserSTEP.StripListLink(str, ref pos, len).Select(x => dictionary[x] as IfcPropertySetDefinition))
+				AddRelated(pset);
+			RelatingTemplate = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcPropertySetTemplate;
 		}
 	}
 	public partial class IfcRelDefinesByType : IfcRelDefines
@@ -1182,14 +1070,8 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingOpeningElement = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedBuildingElement = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			RelatedBuildingElement.mFillsVoids.Add(this);
-			RelatingOpeningElement.mHasFillings.Add(this);
+			RelatingOpeningElement = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcOpeningElement;
+			RelatedBuildingElement = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcElement;
 		}
 	}
 	public partial class IfcRelFlowControlElements : IfcRelConnects
@@ -1214,17 +1096,11 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingElement = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedElement = ParserSTEP.StripLink(str, ref pos, len);
+			RelatingElement = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcInterferenceSelect;
+			RelatedElement = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcInterferenceSelect;
 			mInterferenceGeometry = ParserSTEP.StripLink(str, ref pos, len);
 			mInterferenceType = ParserSTEP.StripString(str, ref pos, len);
 			mImpliedOrder = ParserIfc.StripLogical(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			RelatingElement.InterferesElements.Add(this);
-			RelatedElement.IsInterferedByElements.Add(this);
 		}
 	}
 	public partial class IfcRelNests : IfcRelDecomposes
@@ -1238,31 +1114,8 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingObject = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcObjectDefinition;
+			RelatingObject = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcObjectDefinition;
 			RelatedObjects.AddRange(ParserSTEP.StripListLink(str, ref pos, len).Select(x => dictionary[x] as IfcObjectDefinition));
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			IfcObjectDefinition relating = RelatingObject;
-			relating.relateNested(this);
-			foreach (IfcObjectDefinition od in RelatedObjects)
-			{
-				if (od == null)
-					continue;
-				IfcDistributionPort distributionPort = od as IfcDistributionPort;
-				if (distributionPort != null)
-				{
-					IfcFlowSegment fs = relating as IfcFlowSegment;
-					if (fs != null)
-					{
-						if (distributionPort.mFlowDirection == IfcFlowDirectionEnum.SOURCE)
-							fs.mSourcePort = distributionPort;
-						else if (distributionPort.mFlowDirection == IfcFlowDirectionEnum.SINK)
-							fs.mSinkPort = distributionPort;
-					}
-				}
-			}
 		}
 	}
 	//[Obsolete("DEPRECATED IFC4", false)]
@@ -1306,23 +1159,17 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingElement = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedFeatureElement = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			RelatingElement.mHasProjections.Add(this);
-			RelatedFeatureElement.mProjectsElements.Add(this);
+			RelatingElement = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcElement;
+			RelatedFeatureElement = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcFeatureElementAddition;
 		}
 	}
 	public partial class IfcRelReferencedInSpatialStructure : IfcRelConnects
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
-			if (mRelatedElements.Count <= 0)
+			if ((release < ReleaseVersion.IFC4 && RelatingStructure as IfcSpatialStructureElement == null) || mRelatedElements.Count <= 0)
 				return "";
-			return base.BuildStringSTEP(release) + ",(#" + string.Join(",#", mRelatedElements.Select(x => x.Index)) + "),#" + mRelatingStructure;
+			return base.BuildStringSTEP(release) + ",(" + string.Join(",", mRelatedElements.Select(x => "#" + x.StepId)) + "),#" + mRelatingStructure.StepId;
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
@@ -1344,8 +1191,8 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingProcess = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedProcess = ParserSTEP.StripLink(str, ref pos, len);
+			RelatingProcess = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcProcess;
+			RelatedProcess = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcProcess;
 			if (release < ReleaseVersion.IFC4)
 				mTimeLagSS = ParserSTEP.StripDouble(str, ref pos, len);
 			else
@@ -1356,12 +1203,6 @@ namespace GeometryGym.Ifc
 			if (release != ReleaseVersion.IFC2x3)
 				mUserDefinedSequenceType = ParserSTEP.StripString(str, ref pos, len);
 		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			RelatingProcess.mIsPredecessorTo.Add(this);
-			RelatedProcess.mIsSuccessorFrom.Add(this);
-		}
 	}
 	public partial class IfcRelServicesBuildings : IfcRelConnects
 	{
@@ -1369,37 +1210,25 @@ namespace GeometryGym.Ifc
 		{
 			if (mRelatedBuildings.Count == 0)
 				return "";
-			string str = base.BuildStringSTEP(release) + "," + ParserSTEP.LinkToString(mRelatingSystem) + ",(" + ParserSTEP.LinkToString(mRelatedBuildings[0]);
-			for (int icounter = 1; icounter < mRelatedBuildings.Count; icounter++)
-				str += "," + ParserSTEP.LinkToString(mRelatedBuildings[icounter]);
-			return str + ")";
+			return base.BuildStringSTEP(release) + ",#" + mRelatingSystem.StepId + ",(" +
+				string.Join(",", mRelatedBuildings.Select(x => "#" + x.StepId)) + ")";
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingSystem = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedBuildings = ParserSTEP.StripListLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			RelatingSystem.mServicesBuildings = this;
-			for (int icounter = 0; icounter < mRelatedBuildings.Count; icounter++)
-			{
-				IfcSpatialStructureElement se = mDatabase[mRelatedBuildings[icounter]] as IfcSpatialStructureElement;
-				if (se != null)
-					se.mServicedBySystems.Add(this);
-			}
+			RelatingSystem = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcSystem;
+			foreach (IfcSpatialElement spatial in ParserSTEP.StripListLink(str, ref pos, len).Select(x => dictionary[x] as IfcSpatialElement))
+				addRelated(spatial);
 		}
 	}
 	public partial class IfcRelSpaceBoundary : IfcRelConnects
 	{
-		protected override string BuildStringSTEP(ReleaseVersion release) { return ((release > ReleaseVersion.IFC2x3 && mRelatedBuildingElement == 0) || mRelatingSpace == 0 ? "" : base.BuildStringSTEP(release) + "," + ParserSTEP.LinkToString(mRelatingSpace) + "," + ParserSTEP.LinkToString(mRelatedBuildingElement) + "," + ParserSTEP.LinkToString(mConnectionGeometry) + ",." + mPhysicalOrVirtualBoundary.ToString() + ".,." + mInternalOrExternalBoundary.ToString() + "."); }
+		protected override string BuildStringSTEP(ReleaseVersion release) { return ((release > ReleaseVersion.IFC2x3 && mRelatedBuildingElement == null) || mRelatingSpace == 0 ? "" : base.BuildStringSTEP(release) + "," + ParserSTEP.LinkToString(mRelatingSpace) + "," + ParserSTEP.ObjToLinkString(mRelatedBuildingElement) + "," + ParserSTEP.LinkToString(mConnectionGeometry) + ",." + mPhysicalOrVirtualBoundary.ToString() + ".,." + mInternalOrExternalBoundary.ToString() + "."); }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingSpace = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedBuildingElement = ParserSTEP.StripLink(str, ref pos, len);
+			RelatingSpace = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcSpaceBoundarySelect;
+			RelatedBuildingElement = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcElement;
 			mConnectionGeometry = ParserSTEP.StripLink(str, ref pos, len);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s != "$")
@@ -1408,14 +1237,6 @@ namespace GeometryGym.Ifc
 			if (s != "$")
 				Enum.TryParse<IfcInternalOrExternalEnum>(s.Replace(".", ""), true, out mInternalOrExternalBoundary);
 		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			RelatingSpace.AddBoundary(this);
-			IfcElement e = RelatedBuildingElement;
-			if (e != null)
-				e.mProvidesBoundaries.Add(this);
-		}
 	}
 	public partial class IfcRelSpaceBoundary1stLevel : IfcRelSpaceBoundary
 	{
@@ -1423,13 +1244,7 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mParentBoundary = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			IfcRelSpaceBoundary1stLevel s = mDatabase[mParentBoundary] as IfcRelSpaceBoundary1stLevel;
-			s.mInnerBoundaries.Add(this);
+			ParentBoundary = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcRelSpaceBoundary1stLevel;
 		}
 	}
 	public partial class IfcRelSpaceBoundary2ndLevel : IfcRelSpaceBoundary1stLevel
@@ -1438,12 +1253,7 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mCorrespondingBoundary = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			CorrespondingBoundary.mCorresponds.Add(this);
+			CorrespondingBoundary = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcRelSpaceBoundary2ndLevel;
 		}
 	}
 	public partial class IfcRelVoidsElement : IfcRelDecomposes // Ifc2x3 IfcRelConnects
@@ -1452,18 +1262,8 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingBuildingElement = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedOpeningElement = ParserSTEP.StripLink(str, ref pos, len);
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			IfcElement elem = RelatingBuildingElement;
-			if (elem != null)
-				elem.mHasOpenings.Add(this);
-			IfcFeatureElementSubtraction es = RelatedOpeningElement;
-			if (es != null)
-				es.mVoidsElement = this;
+			RelatingBuildingElement = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcElement;
+			RelatedOpeningElement = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcFeatureElementSubtraction;
 		}
 	}
 	public partial class IfcReparametrisedCompositeCurveSegment : IfcCompositeCurveSegment
@@ -1539,15 +1339,9 @@ namespace GeometryGym.Ifc
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
-			mRelatingConstraint = ParserSTEP.StripLink(str, ref pos, len);
-			mRelatedResourceObjects.AddRange(ParserSTEP.StripListLink(str, ref pos, len));
-		}
-		internal override void postParseRelate()
-		{
-			base.postParseRelate();
-			RelatingConstraint.mPropertiesForConstraint.Add(this);
-			foreach (IfcResourceObjectSelect related in RelatedResourceObjects)
-				related.AddConstraintRelationShip(this);
+			RelatingConstraint = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcConstraint;
+			foreach (IfcResourceObjectSelect resource in ParserSTEP.StripListLink(str, ref pos, len).Select(x=>dictionary[x] as IfcResourceObjectSelect))
+				addRelated(resource);
 		}
 	}
 
@@ -1663,7 +1457,21 @@ namespace GeometryGym.Ifc
 	}
 	public partial class IfcRoad : IfcFacility
 	{
-		public override string StepClassName { get { if (mDatabase != null && mDatabase.Release < ReleaseVersion.IFC4X3) return "IfcFacility"; return base.StepClassName; } }
+		public override string StepClassName { get { if (mDatabase != null && mDatabase.Release < ReleaseVersion.IFC4X3_RC1) return "IfcFacility"; return base.StepClassName; } }
+		protected override string BuildStringSTEP(ReleaseVersion release)
+		{
+			return base.BuildStringSTEP(release) + (release < ReleaseVersion.IFC4X3_RC3 ? "" : (mPredefinedType == IfcRoadTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + "."));
+		}
+		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
+		{
+			base.parse(str, ref pos, release, len, dictionary);
+			if (release > ReleaseVersion.IFC4X3_RC2)
+			{
+				string s = ParserSTEP.StripField(str, ref pos, len);
+				if (s.StartsWith("."))
+					Enum.TryParse<IfcRoadTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+			}
+		}
 	}
 	public partial class IfcRoof : IfcBuiltElement
 	{

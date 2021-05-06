@@ -413,6 +413,22 @@ namespace GeometryGym.Ifc
 				xml.AppendChild(element);
 		}
 	}
+	public partial class IfcClothoid 
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			xml.SetAttribute("ClothoidConstant", mClothoidConstant.ToString());
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			string clothoidConstant = xml.GetAttribute("ClothoidConstant");
+			if (!string.IsNullOrEmpty(clothoidConstant))
+				double.TryParse(clothoidConstant, out mClothoidConstant);
+		}
+	}
+
 	public partial class IfcColourRgb : IfcColourSpecification, IfcColourOrFactor
 	{
 		internal override void ParseXml(XmlElement xml)
@@ -543,13 +559,11 @@ namespace GeometryGym.Ifc
 			setAttribute(xml, "SelfIntersect", mSelfIntersect.ToString().ToLower());
 		}
 	}
-	public partial class IfcCompositeCurveSegment : IfcGeometricRepresentationItem
+	public partial class IfcCompositeCurveSegment : IfcSegment
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
 			base.ParseXml(xml);
-			if (xml.HasAttribute("Transition"))
-				Enum.TryParse<IfcTransitionCode>(xml.Attributes["Transition"].Value, true, out mTransition);
 			if (xml.HasAttribute("SameSense"))
 				bool.TryParse(xml.Attributes["SameSense"].Value, out mSameSense);
 
@@ -563,7 +577,6 @@ namespace GeometryGym.Ifc
 		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
-			xml.SetAttribute("Transition", mTransition.ToString().ToLower());
 			xml.SetAttribute("SameSense", mSameSense.ToString().ToLower());
 			xml.AppendChild(mParentCurve.GetXML(xml.OwnerDocument, "ParentCurve", this, processed));
 		}
@@ -689,7 +702,7 @@ namespace GeometryGym.Ifc
 					}
 				}
 			}
-			if (this as IfcProjectLibrary == null || mDatabase.mContext == null)
+			if (mDatabase.mContext == null || this as IfcProjectLibrary == null)
 				mDatabase.mContext = this;
 		}
 		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
@@ -933,6 +946,25 @@ namespace GeometryGym.Ifc
 			setAttribute(xml, "VerticalDatum", VerticalDatum);
 		}
 	}
+	public partial class IfcCosine
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			xml.SetAttribute("CosineTerm", mCosineTerm.ToString());
+			xml.SetAttribute("Constant", mConstant.ToString());
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			string att = xml.GetAttribute("CosineTerm");
+			if (!string.IsNullOrEmpty(att))
+				double.TryParse(att, out mCosineTerm);
+			att = xml.GetAttribute("Constant");
+			if (!string.IsNullOrEmpty(att))
+				double.TryParse(att, out mConstant);
+		}
+	}
 	public partial class IfcCourse : IfcBuiltElement
 	{
 		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
@@ -1123,6 +1155,32 @@ namespace GeometryGym.Ifc
 				xml.AppendChild(element);
 				foreach (IfcCurve c in InnerBoundaries)
 					element.AppendChild(c.GetXML(xml.OwnerDocument, "", this, processed));
+			}
+		}
+	}
+	public partial class IfcCurveSegment : IfcSegment
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			xml.AppendChild(Placement.GetXML(xml.OwnerDocument, "Placement", this, processed));
+			//xml.AppendChild(SegmentLength.GetXML(xml.OwnerDocument, "SegmentLength", this, processed));
+			xml.AppendChild(ParentCurve.GetXML(xml.OwnerDocument, "ParentCurve", this, processed));
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			foreach (XmlNode child in xml.ChildNodes)
+			{
+				string name = child.Name;
+				if (string.Compare(name, "Placement", true) == 0)
+					Placement = mDatabase.ParseXml<IfcPlacement>(child as XmlElement);
+				else if (string.Compare(name, "SegmentStart", true) == 0)
+					SegmentStart = mDatabase.ParseXml<IfcCurveMeasureSelect>(child as XmlElement);
+				else if (string.Compare(name, "SegmentLength", true) == 0)
+					SegmentLength = mDatabase.ParseXml<IfcCurveMeasureSelect>(child as XmlElement);
+				else if (string.Compare(name, "ParentCurve", true) == 0)
+					ParentCurve = mDatabase.ParseXml<IfcCurve>(child as XmlElement);
 			}
 		}
 	}

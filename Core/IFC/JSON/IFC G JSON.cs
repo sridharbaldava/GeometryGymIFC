@@ -143,7 +143,7 @@ namespace GeometryGym.Ifc
 		{
 			if (options.Style == SetJsonOptions.JsonStyle.Repository && string.IsNullOrEmpty(mGlobalId))
 			{
-				mGlobalId = ParserIfc.EncodeGuid(Guid.NewGuid());
+				setGlobalId(ParserIfc.EncodeGuid(Guid.NewGuid()));
 				options.Encountered.Add(mGlobalId);
 			}
 			base.setJSON(obj, host, options);
@@ -170,7 +170,26 @@ namespace GeometryGym.Ifc
 			obj["Elements"] = array;
 		}
 	}
-
+	public partial class IfcGradientCurve
+	{
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		{
+			base.setJSON(obj, host, options);
+			obj["BaseCurve"] = BaseCurve.getJson(this, options);
+			if (EndPoint != null)
+				obj["EndPoint"] = EndPoint.getJson(this, options);
+		}
+		internal override void parseJObject(JObject obj)
+		{
+			base.parseJObject(obj);
+			JObject jobj = obj.GetValue("BaseCurve", StringComparison.InvariantCultureIgnoreCase) as JObject;
+			if (jobj != null)
+				BaseCurve = mDatabase.ParseJObject<IfcBoundedCurve>(jobj);
+			jobj = obj.GetValue("EndPoint", StringComparison.InvariantCultureIgnoreCase) as JObject;
+			if (jobj != null)
+				EndPoint = mDatabase.ParseJObject<IfcPlacement>(jobj);
+		}
+	}
 	public partial class IfcGrid : IfcPositioningElement
 	{
 		internal override void parseJObject(JObject obj)
@@ -217,6 +236,8 @@ namespace GeometryGym.Ifc
 			base.parseJObject(obj);
 			foreach (IfcRelAssignsToGroup rag in mDatabase.extractJArray<IfcRelAssignsToGroup>(obj.GetValue("IsGroupedBy", StringComparison.InvariantCultureIgnoreCase) as JArray))
 				rag.RelatingGroup = this;
+			foreach (IfcRelReferencedInSpatialStructure rss in mDatabase.extractJArray<IfcRelReferencedInSpatialStructure>(obj.GetValue("ReferencedInStructures", StringComparison.InvariantCultureIgnoreCase) as JArray))
+				rss.RelatedElements.Add(this);
 		}
 		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
 		{

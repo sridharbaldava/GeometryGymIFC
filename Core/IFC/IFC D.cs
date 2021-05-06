@@ -99,22 +99,22 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public partial class IfcDerivedProfileDef : IfcProfileDef
 	{
-		private IfcProfileDef mContainerProfile;// : IfcProfileDef;
+		private IfcProfileDef mParentProfile;// : IfcProfileDef;
 		private IfcCartesianTransformationOperator2D mOperator;// : IfcCartesianTransformationOperator2D;
 		internal string mLabel = "$";// : OPTIONAL IfcLabel;
 
-		public IfcProfileDef ContainerProfile { get { return mContainerProfile; } set { mContainerProfile = value; } }
+		public IfcProfileDef ParentProfile { get { return mParentProfile; } set { mParentProfile = value; } }
 		public IfcCartesianTransformationOperator2D Operator { get { return mOperator; } set { mOperator = value; } }
 		public string Label { get { return (mLabel == "$" ? "" : ParserIfc.Decode(mLabel)); } set { mLabel = (string.IsNullOrEmpty(value) ? "$" : ParserIfc.Encode(value)); } }
 
 		internal IfcDerivedProfileDef() : base() { }
 		internal IfcDerivedProfileDef(DatabaseIfc db, IfcDerivedProfileDef p, DuplicateOptions options) : base(db, p, options)
 		{
-			ContainerProfile = db.Factory.Duplicate(p.ContainerProfile, options) as IfcProfileDef;
+			ParentProfile = db.Factory.Duplicate(p.ParentProfile, options) as IfcProfileDef;
 			Operator = db.Factory.Duplicate(p.Operator, options) as IfcCartesianTransformationOperator2D;
 			mLabel = p.mLabel;
 		}
-		public IfcDerivedProfileDef(IfcProfileDef container, IfcCartesianTransformationOperator2D op, string name) : base(container.mDatabase, name) { ContainerProfile = container; Operator = op; }
+		public IfcDerivedProfileDef(IfcProfileDef container, IfcCartesianTransformationOperator2D op, string name) : base(container.mDatabase, name) { ParentProfile = container; Operator = op; }
 	}
 	[Serializable]
 	public partial class IfcDerivedUnit : BaseClassIfc, IfcUnit
@@ -271,12 +271,12 @@ namespace GeometryGym.Ifc
 	public abstract partial class IfcDirectrixCurveSweptAreaSolid : IfcSweptAreaSolid //ABSTRACT SUPERTYPE OF(ONEOF(IfcFixedReferenceSweptAreaSolid, IfcSurfaceCurveSweptAreaSolid))
 	{
 		private IfcCurve mDirectrix = null; //: IfcCurve;
-		private double mStartParam = double.NaN; //: OPTIONAL IfcParameterValue;
-		private double mEndParam = double.NaN; //: OPTIONAL IfcParameterValue;
+		private IfcCurveMeasureSelect mStartParam = null; //: OPTIONAL IfcCurveMeasureSelect IFC4 IfcParameterValue;
+		private IfcCurveMeasureSelect mEndParam = null; //: OPTIONAL IfcCurveMeasureSelect IFC4 IfcParameterValue;
 
 		public IfcCurve Directrix { get { return mDirectrix; } set { mDirectrix = value; } }
-		public double StartParam { get { return mStartParam; } set { mStartParam = value; } }
-		public double EndParam { get { return mEndParam; } set { mEndParam = value; } }
+		public IfcCurveMeasureSelect StartParam { get { return mStartParam; } set { mStartParam = value; } }
+		public IfcCurveMeasureSelect EndParam { get { return mEndParam; } set { mEndParam = value; } }
 
 		protected IfcDirectrixCurveSweptAreaSolid() : base() { }
 		protected IfcDirectrixCurveSweptAreaSolid(DatabaseIfc db, IfcDirectrixCurveSweptAreaSolid s, DuplicateOptions options) : base(db, s, options)
@@ -292,12 +292,12 @@ namespace GeometryGym.Ifc
 	public abstract partial class IfcDirectrixDistanceSweptAreaSolid : IfcSweptAreaSolid
 	{
 		private IfcCurve mDirectrix = null; //: IfcCurve;
-		private IfcDistanceExpression mStartDistance = null; //: OPTIONAL IfcDistanceExpression;
-		private IfcDistanceExpression mEndDistance = null; //: OPTIONAL IfcDistanceExpression;
+		private IfcPointByDistanceExpression mStartDistance = null; //: OPTIONAL IfcDistanceExpression;
+		private IfcPointByDistanceExpression mEndDistance = null; //: OPTIONAL IfcDistanceExpression;
 
 		public IfcCurve Directrix { get { return mDirectrix; } set { mDirectrix = value; } }
-		public IfcDistanceExpression StartDistance { get { return mStartDistance; } set { mStartDistance = value; } }
-		public IfcDistanceExpression EndDistance { get { return mEndDistance; } set { mEndDistance = value; } }
+		public IfcPointByDistanceExpression StartDistance { get { return mStartDistance; } set { mStartDistance = value; } }
+		public IfcPointByDistanceExpression EndDistance { get { return mEndDistance; } set { mEndDistance = value; } }
 
 		protected IfcDirectrixDistanceSweptAreaSolid() : base() { }
 		protected IfcDirectrixDistanceSweptAreaSolid(DatabaseIfc db, IfcDirectrixDistanceSweptAreaSolid s, DuplicateOptions options) : base(db, s, options)
@@ -339,38 +339,6 @@ namespace GeometryGym.Ifc
 		internal IfcDiscreteAccessoryType() : base() { }
 		internal IfcDiscreteAccessoryType(DatabaseIfc db, IfcDiscreteAccessoryType t, DuplicateOptions options) : base(db, t, options) { mPredefinedType = t.mPredefinedType; }
 		public IfcDiscreteAccessoryType(DatabaseIfc db, string name, IfcDiscreteAccessoryTypeEnum type) : base(db) { Name = name; mPredefinedType = type; }
-	}
-	[Serializable]
-	public partial class IfcDistanceExpression : IfcGeometricRepresentationItem
-	{
-		internal double mDistanceAlong;// : IfcLengthMeasure;
-		internal double mOffsetLateral = double.NaN;// : OPTIONAL IfcLengthMeasure;
-		internal double mOffsetVertical = double.NaN;// : OPTIONAL IfcLengthMeasure;
-		internal double mOffsetLongitudinal = double.NaN;// : OPTIONAL IfcLengthMeasure;
-		internal bool mAlongHorizontal = false; // IfcBoolean
-
-		public double DistanceAlong { get { return mDistanceAlong; } set { mDistanceAlong = value; } }
-		public double OffsetLateral { get { return mOffsetLateral; } set { mOffsetLateral = value; } }
-		public double OffsetVertical { get { return mOffsetVertical; } set { mOffsetVertical = value; } }
-		public double OffsetLongitudinal { get { return mOffsetLongitudinal; } set { mOffsetLongitudinal = value; } }
-		public bool AlongHorizontal { get { return mAlongHorizontal; } set { mAlongHorizontal = value; } } 
-
-		internal IfcDistanceExpression() : base() { }
-		internal IfcDistanceExpression(DatabaseIfc db, IfcDistanceExpression e, DuplicateOptions options) : base(db, e, options)
-		{
-			DistanceAlong = e.DistanceAlong;
-			OffsetLateral = e.OffsetLateral;
-			OffsetVertical = e.OffsetVertical;
-			OffsetLongitudinal = e.OffsetLongitudinal;
-			AlongHorizontal = e.AlongHorizontal;
-		}
-		public IfcDistanceExpression(DatabaseIfc db, double distanceAlong) : base(db) { DistanceAlong = distanceAlong; }
-
-		internal IfcDistanceExpression Duplicate() 
-		{
-			return new IfcDistanceExpression(null, DistanceAlong)
-			{ OffsetLateral = OffsetLateral, OffsetVertical = OffsetVertical, OffsetLongitudinal = OffsetLongitudinal, AlongHorizontal = AlongHorizontal };
-		}
 	}
 	[Serializable]
 	public partial class IfcDistributionBoard : IfcFlowController
@@ -657,6 +625,22 @@ namespace GeometryGym.Ifc
 		internal IfcDoor() : base() { }
 		internal IfcDoor(DatabaseIfc db, IfcDoor d, DuplicateOptions options) : base(db, d, options) { mOverallHeight = d.mOverallHeight; mOverallWidth = d.mOverallWidth; mPredefinedType = d.mPredefinedType; mOperationType = d.mOperationType; mUserDefinedOperationType = d.mUserDefinedOperationType; }
 		public IfcDoor(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+
+		internal static IfcDoorTypeOperationEnum ParseDoorTypeOperation(string constant)
+		{
+			IfcDoorTypeOperationEnum result = IfcDoorTypeOperationEnum.NOTDEFINED;
+			if (Enum.TryParse(constant, out result))
+				return result;
+			if (Enum.TryParse(constant.Replace("PANEL", "DOOR"), out result))
+				return result;
+			return IfcDoorTypeOperationEnum.NOTDEFINED;
+		}
+		internal static string SerializeDoorTypeOperation(IfcDoorTypeOperationEnum operation, ReleaseVersion release)
+		{
+			if (release < ReleaseVersion.IFC4X3_RC3)
+				return operation.ToString().Replace("PANEL", "DOOR");
+			return operation.ToString();
+		}
 	}
 	[Serializable]
 	public partial class IfcDoorLiningProperties : IfcPreDefinedPropertySet // IFC2x3 IfcPropertySetDefinition

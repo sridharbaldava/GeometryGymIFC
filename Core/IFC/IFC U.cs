@@ -81,7 +81,7 @@ namespace GeometryGym.Ifc
 		internal IfcUnitAssignment(DatabaseIfc db, IfcUnitAssignment u) : base(db) { Units.AddRange(u.Units.ConvertAll(x => db.Factory.Duplicate(u.mDatabase[x.Index]) as IfcUnit)); }
 		public IfcUnitAssignment(DatabaseIfc db) : base(db) { }
 		public IfcUnitAssignment(DatabaseIfc db, Length length) : base(db) { SetUnits(length); }
-		public IfcUnitAssignment(IfcUnit unit) : base(unit.Database) { Units.Add(unit); }
+		public IfcUnitAssignment(params IfcUnit[] units) : base(units.First().Database) { Units.AddRange(units); }
 		public IfcUnitAssignment(IEnumerable<IfcUnit> units) : base(units.First().Database) { Units.AddRange(units); }
 
 		internal static double scaleSI(Length length)
@@ -228,15 +228,9 @@ namespace GeometryGym.Ifc
 		
 		internal void Replace(IfcNamedUnit unit)
 		{
-			for (int icounter = 0; icounter < mUnits.Count; icounter++)
-			{
-				IfcNamedUnit u = mUnits[icounter] as IfcNamedUnit;
-				if (u != null && u.UnitType == unit.UnitType)
-				{
-					mUnits[icounter] = unit;
-					return;
-				}
-			}
+			IfcNamedUnit existing = mUnits.OfType<IfcNamedUnit>().Where(x => x.UnitType == unit.UnitType).FirstOrDefault();
+			if (existing != null)
+				mUnits.Remove(existing);
 			Units.Add(unit);
 		}
 		

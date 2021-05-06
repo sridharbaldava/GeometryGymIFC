@@ -124,6 +124,23 @@ namespace GeometryGym.Ifc
 		public IfcBlock(IfcAxis2Placement3D position, double x,double y, double z) : base(position) { mXLength = x; mYLength = y; mZLength = z; }
 	}
 	[Serializable]
+	public partial class IfcBlossCurve : IfcSpiral
+	{
+		private double mQubicTerm = 0; //: IfcLengthMeasure;
+		private double mQuadraticTerm = double.NaN; //: OPTIONAL IfcLengthMeasure;
+		private double mLinearTerm = double.NaN; //: OPTIONAL IfcLengthMeasure;
+
+		public double QubicTerm { get { return mQubicTerm; } set { mQubicTerm = value; } }
+		public double QuadraticTerm { get { return mQuadraticTerm; } set { mQuadraticTerm = value; } }
+		public double LinearTerm { get { return mLinearTerm; } set { mLinearTerm = value; } }
+
+		public IfcBlossCurve() : base() { }
+		internal IfcBlossCurve(DatabaseIfc db, IfcBlossCurve bloss, DuplicateOptions options)
+			: base(db, bloss, options) { QubicTerm = bloss.QubicTerm; QuadraticTerm = bloss.QuadraticTerm; LinearTerm = bloss.LinearTerm; }
+		public IfcBlossCurve(IfcAxis2Placement position, double qubicTerm)
+			: base(position) { QubicTerm = qubicTerm; }
+	}
+	[Serializable]
 	public partial class IfcBoiler : IfcEnergyConversionDevice //IFC4  
 	{
 		internal IfcBoilerTypeEnum mPredefinedType = IfcBoilerTypeEnum.NOTDEFINED;
@@ -387,7 +404,7 @@ namespace GeometryGym.Ifc
 		public IfcBridge(DatabaseIfc db) : base(db) { }
 		public IfcBridge(DatabaseIfc db, IfcBridge bridge, DuplicateOptions options) : base(db, bridge, options) { }
 		public IfcBridge(IfcFacility host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { Name = name; }
-		internal IfcBridge(IfcObjectDefinition host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		public IfcBridge(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
 	}
 	[Serializable]
 	public partial class IfcBridgePart : IfcFacilityPart
@@ -396,6 +413,7 @@ namespace GeometryGym.Ifc
 		public IfcBridgePart() : base() { }
 		public IfcBridgePart(DatabaseIfc db) : base(db) { }
 		public IfcBridgePart(DatabaseIfc db, IfcBridgePart bridgePart, DuplicateOptions options) : base(db, bridgePart, options) { }
+		public IfcBridgePart(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
 	}
 	[Serializable]
 	public abstract partial class IfcBSplineCurve : IfcBoundedCurve //SUPERTYPE OF(IfcBSplineCurveWithKnots)
@@ -564,14 +582,15 @@ namespace GeometryGym.Ifc
 		}
 	}
 	[Serializable]
-	public partial class IfcBuiltElement : IfcElement //ABSTRACT SUPERTYPE OF (ONEOF (IfcBeam,IfcBuildingElementProxy,IfcColumn,IfcCovering,IfcCurtainWall,IfcDoor,IfcFooting
+	public partial class IfcBuiltElement : IfcElement //SUPERTYPE OF (ONEOF (IfcBeam,IfcBuildingElementProxy,IfcColumn,IfcCovering,IfcCurtainWall,IfcDoor,IfcFooting
 	{ //,IfcMember,IfcPile,IfcPlate,IfcRailing,IfcRamp,IfcRampFlight,IfcRoof,IfcSlab,IfcStair,IfcStairFlight,IfcWall,IfcWindow) IFC2x3 IfcBuildingElementComponent IFC4  IfcShadingDevice
+			//Non-Abstract in IFC4x3
 		protected IfcBuiltElement() : base() { }
-		protected IfcBuiltElement(DatabaseIfc db) : base(db) { }
+		public IfcBuiltElement(DatabaseIfc db) : base(db) { }
 		protected IfcBuiltElement(DatabaseIfc db, IfcBuiltElement e, DuplicateOptions options) : base(db, e, options) { }
-		protected IfcBuiltElement(IfcObjectDefinition host, IfcObjectPlacement p, IfcProductDefinitionShape r) : base(host, p, r) { }
-		protected IfcBuiltElement(IfcProduct host, IfcMaterialProfileSetUsage profile, IfcAxis2Placement3D placement, double length) : base(host, profile, placement, length) { }
-		protected IfcBuiltElement(IfcProduct host, IfcMaterialProfileSetUsage profile, IfcAxis2Placement3D placement, Tuple<double, double> arcOrigin, double arcAngle) : base(host, profile, placement,arcOrigin, arcAngle) { }
+		public IfcBuiltElement(IfcObjectDefinition host, IfcObjectPlacement p, IfcProductDefinitionShape r) : base(host, p, r) { }
+		public IfcBuiltElement(IfcProduct host, IfcMaterialProfileSetUsage profile, IfcAxis2Placement3D placement, double length) : base(host, profile, placement, length) { }
+		public IfcBuiltElement(IfcProduct host, IfcMaterialProfileSetUsage profile, IfcAxis2Placement3D placement, Tuple<double, double> arcOrigin, double arcAngle) : base(host, profile, placement,arcOrigin, arcAngle) { }
 	}
 	[Obsolete("DELETED IFC4", false)]
 	public abstract class IfcBuildingElementComponent : IfcBuiltElement 
@@ -673,7 +692,7 @@ namespace GeometryGym.Ifc
 				{
 					if (mDatabase.Release < ReleaseVersion.IFC4)
 						return "IfcSystem";
-					if (mDatabase.Release < ReleaseVersion.IFC4X3)
+					if (mDatabase.Release < ReleaseVersion.IFC4X3_RC1)
 						return "IfcBuildingSystem";
 				}
 				return base.StepClassName;

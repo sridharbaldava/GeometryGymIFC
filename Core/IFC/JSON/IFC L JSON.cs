@@ -74,7 +74,7 @@ namespace GeometryGym.Ifc
 			base.setJSON(obj, host, options);
 			setAttribute(obj, "Description", Description);
 			setAttribute(obj, "Language", Language);
-			if (mReferencedLibrary > 0)
+			if (mReferencedLibrary != null)
 				obj["ReferencedLibrary"] = ReferencedLibrary.getJson(this, options);
 		}
 	}
@@ -97,34 +97,19 @@ namespace GeometryGym.Ifc
 				Inclinating = mDatabase.ParseJObject<IfcAxisLateralInclination>(jobj);
 		}
 	}
-	public abstract partial class IfcLinearPositioningElement : IfcPositioningElement //IFC4.1
+	public partial class IfcLinearPositioningElement : IfcPositioningElement //IFC4.1
 	{
 		internal override void parseJObject(JObject obj)
 		{
 			base.parseJObject(obj);
 			JToken token = obj.GetValue("Axis", StringComparison.InvariantCultureIgnoreCase);
 			if (token != null)
-				Axis = mDatabase.ParseJObject<IfcLinearAxisSelect>(token as JObject);
+				Axis = mDatabase.ParseJObject<IfcCurve>(token as JObject);
 		}
 		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			obj["Axis"] = Axis.getJson(this, options);
-		}
-	}
-	public partial class IfcLinearPlacementWithInclination : IfcLinearPlacement
-	{
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
-		{
-			base.setJSON(obj, host, options);
-			obj["Inclinating"] = Inclinating.getJson(this, options);
-		}
-		internal override void parseJObject(JObject obj)
-		{
-			base.parseJObject(obj);
-			JObject jobj = obj.GetValue("Inclinating", StringComparison.InvariantCultureIgnoreCase) as JObject;
-			if (jobj != null)
-				Inclinating = mDatabase.ParseJObject<IfcAxisLateralInclination>(jobj);
 		}
 	}
 	public partial class IfcLinearSpanPlacement : IfcLinearPlacement

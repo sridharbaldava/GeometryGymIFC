@@ -132,11 +132,11 @@ namespace GeometryGym.Ifc
 			set { mTrueNorth = value; if (value != null) value.DirectionRatioZ = double.NaN; } 
 		}
 		public List<IfcGeometricRepresentationSubContext> HasSubContexts { get { return mHasSubContexts; } }
-		public IfcCoordinateOperation HasCoordinateOperation { get { return mHasCoordinateOperation; } set { mHasCoordinateOperation = value; if(value.mSourceCRS != mIndex) value.SourceCRS = this; } }
+		public IfcCoordinateOperation HasCoordinateOperation { get { return mHasCoordinateOperation; } set { mHasCoordinateOperation = value; if(value.mSourceCRS != this) value.SourceCRS = this; } }
 		
 		internal IfcGeometricRepresentationContext() : base() { }
 		protected IfcGeometricRepresentationContext(DatabaseIfc db) : base(db) { }
-		internal IfcGeometricRepresentationContext(DatabaseIfc db, IfcGeometricRepresentationContext c) : base(db, c)
+		internal IfcGeometricRepresentationContext(DatabaseIfc db, IfcGeometricRepresentationContext c, DuplicateOptions options) : base(db, c, options)
 		{
 			mCoordinateSpaceDimension = c.mCoordinateSpaceDimension;
 			mPrecision = c.mPrecision;
@@ -145,8 +145,14 @@ namespace GeometryGym.Ifc
 			if (c.mTrueNorth != null)
 				TrueNorth = db.Factory.Duplicate(c.TrueNorth) as IfcDirection;
 
-			foreach (IfcGeometricRepresentationSubContext sc in mHasSubContexts)
-				db.Factory.Duplicate(sc);
+			if (options.DuplicateDownstream)
+			{
+				foreach (IfcGeometricRepresentationSubContext sc in c.mHasSubContexts)
+					db.Factory.Duplicate(sc, options);
+			}
+
+			if (c.mHasCoordinateOperation != null)
+				db.Factory.Duplicate(c.mHasCoordinateOperation, options);
 		}
 		internal IfcGeometricRepresentationContext(DatabaseIfc db, int SpaceDimension, double precision) : base(db)
 		{
@@ -175,7 +181,7 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public partial class IfcGeometricRepresentationSubContext : IfcGeometricRepresentationContext
 	{
-		public enum SubContextIdentifier { Axis, Body, BoundingBox, FootPrint, PlanSymbol3d, PlanSymbol2d, Reference, Profile, Row, Outline };// Surface };
+		public enum SubContextIdentifier { Axis, Body, BoundingBox, FootPrint, PlanSymbol3d, PlanSymbol2d, Reference, Profile, Row, Outline };//, PVI };// Surface };
 
 		internal IfcGeometricRepresentationContext mParentContext;// : IfcGeometricRepresentationContext;
 		internal double mTargetScale = double.NaN;// : OPTIONAL IfcPositiveRatioMeasure;
@@ -188,9 +194,9 @@ namespace GeometryGym.Ifc
 		public string UserDefinedTargetView { get { return (mUserDefinedTargetView == "$" ? "" : ParserIfc.Decode(mUserDefinedTargetView)); } set { mUserDefinedTargetView = (string.IsNullOrEmpty(value) ? "$" : ParserIfc.Encode(value)); } }
 
 		internal IfcGeometricRepresentationSubContext() : base() { }
-		internal IfcGeometricRepresentationSubContext(DatabaseIfc db, IfcGeometricRepresentationSubContext s) : base(db, s)
+		internal IfcGeometricRepresentationSubContext(DatabaseIfc db, IfcGeometricRepresentationSubContext s, DuplicateOptions options) : base(db, s, options)
 		{
-			ParentContext = db.Factory.Duplicate(s.ParentContext) as IfcGeometricRepresentationContext;
+			ParentContext = db.Factory.Duplicate(s.ParentContext, options) as IfcGeometricRepresentationContext;
 
 			mTargetScale = s.mTargetScale;
 			mTargetView = s.mTargetView;
@@ -254,7 +260,31 @@ namespace GeometryGym.Ifc
 		protected IfcGeotechnicalStratum() : base() { }
 		protected IfcGeotechnicalStratum(DatabaseIfc db) : base(db) { }
 		protected IfcGeotechnicalStratum(DatabaseIfc db, IfcGeotechnicalStratum geotechnicalStratum, DuplicateOptions options) : base(db, geotechnicalStratum, options) { }
-		protected IfcGeotechnicalStratum(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		protected IfcGeotechnicalStratum(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation)
+			: base(host.Database)
+		{
+			host.AddNested(this);
+			ObjectPlacement = placement;
+			Representation = representation;
+		}
+	}
+	[Serializable]
+	public partial class IfcGradientCurve : IfcCompositeCurve 
+	{
+		private IfcBoundedCurve mBaseCurve = null; //: IfcBoundedCurve;
+		private IfcPlacement mEndPoint = null; //: OPTIONAL IfcPlacement;
+
+		public IfcBoundedCurve BaseCurve { get { return mBaseCurve; } set { mBaseCurve = value; } }
+		public IfcPlacement EndPoint { get { return mEndPoint; } set { mEndPoint = value; } }
+
+		public IfcGradientCurve() : base() { }
+		internal IfcGradientCurve(DatabaseIfc db, IfcGradientCurve c, DuplicateOptions options) : base(db, c, options)
+		{
+			mBaseCurve = db.Factory.Duplicate(c.mBaseCurve) as IfcBoundedCurve;
+			mEndPoint = db.Factory.Duplicate(c.mEndPoint) as IfcPlacement;
+		}
+		public IfcGradientCurve(IfcBoundedCurve baseCurve, IEnumerable<IfcCurveSegment> segments)
+			: base(segments) { BaseCurve = baseCurve; }
 	}
 	[Serializable]
 	public partial class IfcGrid : IfcPositioningElement
@@ -448,16 +478,6 @@ namespace GeometryGym.Ifc
 				}
 			}
 		}
-
-		internal override void detachFromHost()
-		{
-			base.detachFromHost();
-			if (mContainedInStructure != null)
-			{
-				mContainedInStructure.RelatedElements.Remove(this);
-				mContainedInStructure = null;
-			}
-		}
 	}
 	[Serializable]
 	public partial class IfcGridAxis : BaseClassIfc, NamedObjectIfc
@@ -483,27 +503,29 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public partial class IfcGridPlacement : IfcObjectPlacement
 	{
-		internal int mPlacementLocation;// : IfcVirtualGridIntersection ;
-		internal int mPlacementRefDirection;// : OPTIONAL IfcVirtualGridIntersection;
+		internal IfcVirtualGridIntersection mPlacementLocation;// : IfcVirtualGridIntersection ;
+		internal IfcGridPlacementDirectionSelect mPlacementRefDirection;// : OPTIONAL IfcVirtualGridIntersection; IFC4x3 IfcGridPlacementDirectionSelect
 
-		public IfcVirtualGridIntersection PlacementLocation { get { return mDatabase[mPlacementLocation] as IfcVirtualGridIntersection; } set { mPlacementLocation = value.mIndex; } }
-		public IfcVirtualGridIntersection PlacementRefDirection { get { return mDatabase[mPlacementRefDirection] as IfcVirtualGridIntersection; } set { mPlacementRefDirection = (value == null ? 0 : value.mIndex); } }
+		public IfcVirtualGridIntersection PlacementLocation { get { return mPlacementLocation; } set { mPlacementLocation = value; } }
+		public IfcGridPlacementDirectionSelect PlacementRefDirection { get { return mPlacementRefDirection; } set { mPlacementRefDirection = value; } }
 
 		internal IfcGridPlacement() : base() { }
 		internal IfcGridPlacement(DatabaseIfc db, IfcGridPlacement p) : base(db, p)
 		{
 			PlacementLocation = db.Factory.Duplicate(p.PlacementLocation) as IfcVirtualGridIntersection;
-			if (p.mPlacementRefDirection > 0)
-				PlacementRefDirection = db.Factory.Duplicate(p.PlacementRefDirection) as IfcVirtualGridIntersection;
+			if (p.mPlacementRefDirection != null)
+				PlacementRefDirection = db.Factory.Duplicate(p.PlacementRefDirection) as IfcGridPlacementDirectionSelect;
 		}
 	}
 	public interface IfcGridPlacementDirectionSelect : IBaseClassIfc { } // SELECT(IfcVirtualGridIntersection, IfcDirection);
 	[Serializable]
-	public partial class IfcGroup : IfcObject //SUPERTYPE OF (ONEOF (IfcAsset ,IfcCondition ,IfcInventory ,IfcStructuralLoadGroup ,IfcStructuralResultGroup ,IfcSystem ,IfcZone))
+	public partial class IfcGroup : IfcObject, IfcSpatialReferenceSelect //SUPERTYPE OF (ONEOF (IfcAsset ,IfcCondition ,IfcInventory ,IfcStructuralLoadGroup ,IfcStructuralResultGroup ,IfcSystem ,IfcZone))
 	{
 		//INVERSE
-		internal List<IfcRelAssignsToGroup> mIsGroupedBy = new List<IfcRelAssignsToGroup>();// IFC4 SET : IfcRelAssignsToGroup FOR RelatingGroup;
-		public ReadOnlyCollection<IfcRelAssignsToGroup> IsGroupedBy { get { return new ReadOnlyCollection<IfcRelAssignsToGroup>( mIsGroupedBy); } }
+		internal SET<IfcRelAssignsToGroup> mIsGroupedBy = new SET<IfcRelAssignsToGroup>();// IFC4 SET : IfcRelAssignsToGroup FOR RelatingGroup;
+		internal SET<IfcRelReferencedInSpatialStructure> mReferencedInStructures = new SET<IfcRelReferencedInSpatialStructure>();//  : 	SET OF IfcRelReferencedInSpatialStructure FOR RelatedElements;
+		public SET<IfcRelAssignsToGroup> IsGroupedBy { get { return mIsGroupedBy; } }
+		public SET<IfcRelReferencedInSpatialStructure> ReferencedInStructures { get { return mReferencedInStructures; } }
 
 		internal IfcGroup() : base() { }
 		internal IfcGroup(DatabaseIfc db, IfcGroup g, DuplicateOptions options) : base(db, g, options)
@@ -515,6 +537,23 @@ namespace GeometryGym.Ifc
 			}
 		}
 		public IfcGroup(DatabaseIfc db, string name) : base(db) { Name = name; }
+		public IfcGroup(IfcSpatialElement spatial, string name) : base(spatial.Database) 
+		{
+			Name = name;
+			if (!(this is IfcZone))
+			{
+				if (spatial.mDatabase.Release <= ReleaseVersion.IFC4X3_RC1)
+				{
+					IfcSystem system = this as IfcSystem;
+					if (system != null)
+					{
+						new IfcRelServicesBuildings(system, spatial) { Name = name };
+					}
+				}
+				else
+					spatial.ReferenceElement(this);
+			}
+		}
 		public IfcGroup(List<IfcObjectDefinition> ods) : base(ods[0].mDatabase) { mIsGroupedBy.Add(new IfcRelAssignsToGroup(ods, this)); }
 
 		public void AddRelated(IfcObjectDefinition related)
@@ -524,7 +563,7 @@ namespace GeometryGym.Ifc
 				new IfcRelAssignsToGroup(related, this);
 			}
 			else
-				mIsGroupedBy[0].RelatedObjects.Add(related);
+				mIsGroupedBy.First().RelatedObjects.Add(related);
 		}
 
 		protected override List<T> Extract<T>(Type type)

@@ -135,8 +135,9 @@ namespace GeometryGym.Ifc
 		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
 			return base.BuildStringSTEP(release) + (release < ReleaseVersion.IFC4 ? ",'" + ParserIfc.Encode(mIdentification) + "'" : "") +
-				(string.IsNullOrEmpty(mStatus) ? ",$," : ",'" + ParserIfc.Encode(mStatus) + "',") + (string.IsNullOrEmpty(mWorkMethod) ? "$," : ",'" + ParserIfc.Encode(mWorkMethod) + "',") +
-				ParserSTEP.BoolToString(mIsMilestone) + "," + mPriority + (release < ReleaseVersion.IFC4 ? "" : "," + ParserSTEP.LinkToString(mTaskTime) + ",." + mPredefinedType.ToString() + "."); }
+				(string.IsNullOrEmpty(mStatus) ? ",$," : ",'" + ParserIfc.Encode(mStatus) + "',") + (string.IsNullOrEmpty(mWorkMethod) ? "$," : ",'" +
+				ParserIfc.Encode(mWorkMethod) + "',") + ParserSTEP.BoolToString(mIsMilestone) + "," + mPriority + 
+				(release < ReleaseVersion.IFC4 ? "" : "," + ParserSTEP.LinkToString(mTaskTime) + (mPredefinedType == IfcTaskTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + ".")); }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
@@ -718,7 +719,7 @@ namespace GeometryGym.Ifc
 			string result = base.BuildStringSTEP(release);
 			if (mPredefinedType == null)
 				result += ",$";
-			else if (release < ReleaseVersion.IFC4X3)
+			else if (release < ReleaseVersion.IFC4X3_RC1)
 			{
 				string str = mPredefinedType.ValueString();
 				IfcTransportElementTypeEnum predefined = IfcTransportElementTypeEnum.NOTDEFINED;
@@ -748,7 +749,7 @@ namespace GeometryGym.Ifc
 		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
 			string result = base.BuildStringSTEP(release);
-			if (release < ReleaseVersion.IFC4X3)
+			if (release < ReleaseVersion.IFC4X3_RC1)
 			{
 				string str = mPredefinedType.ValueString();
 				IfcTransportElementTypeEnum predefined = IfcTransportElementTypeEnum.NOTDEFINED;

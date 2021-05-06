@@ -48,7 +48,7 @@ namespace GeometryGym.Ifc
 			if (mPosition != null)
 			{
 				IfcAxis2Placement2D position = Position;
-				if((mDatabase != null && mDatabase.Release < ReleaseVersion.IFC4 )|| !position.IsXYPlane)
+				if((mDatabase != null && mDatabase.Release < ReleaseVersion.IFC4 )|| !position.IsXYPlane(mDatabase.Tolerance))
 					obj["Position"] = Position.getJson(this, options);
 			}
 		}
@@ -220,13 +220,13 @@ namespace GeometryGym.Ifc
 			{
 				JObject jobj = token as JObject;
 				if (jobj != null)
-					Location = mDatabase.ParseJObject<IfcCartesianPoint>(jobj);
+					mLocation = mDatabase.ParseJObject<IfcPoint>(jobj);
 			}
 		}
 		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
-			obj["Location"] = Location.getJson(this, options);
+			obj["Location"] = mLocation.getJson(this, options);
 		}
 	}
 	public partial class IfcPolyline : IfcBoundedCurve
@@ -253,6 +253,18 @@ namespace GeometryGym.Ifc
 		{
 			base.setJSON(obj, host, options);
 			obj["Polygon"] = new JArray(mPolygon.ConvertAll(x => x.getJson(this, options)));
+		}
+	}
+	public partial class IfcPolynomialCurve : IfcCurve
+	{
+		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		{
+			base.setJSON(obj, host, options);
+		}
+		internal override void parseJObject(JObject obj)
+		{
+			base.parseJObject(obj);
+			Position = mDatabase.ParseJObject<IfcPlacement>(obj);
 		}
 	}
 	public partial class IfcPresentationLayerAssignment : BaseClassIfc //SUPERTYPE OF	(IfcPresentationLayerWithStyle);
@@ -356,7 +368,7 @@ namespace GeometryGym.Ifc
 			if (placement != null)
 			{
 				if (string.IsNullOrEmpty(placement.mGlobalId))
-					placement.mGlobalId = ParserIfc.EncodeGuid(Guid.NewGuid());
+					placement.setGlobalId(ParserIfc.EncodeGuid(Guid.NewGuid()));
 				placementObj = placement.getJson(this, options);
 			}
 			base.setJSON(obj, host, options);

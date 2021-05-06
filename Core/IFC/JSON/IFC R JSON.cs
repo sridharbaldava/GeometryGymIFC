@@ -131,6 +131,8 @@ namespace GeometryGym.Ifc
 				obj["InnerReference"] = InnerReference.getJson(this, options);
 		}
 	}
+	
+
 	public partial class IfcReinforcedSoil : IfcEarthworksElement
 	{
 		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
@@ -415,10 +417,10 @@ namespace GeometryGym.Ifc
 		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
-			if (host.mIndex != mRelatingElement)
-				obj["RelatingElement"] = mDatabase[mRelatingElement].getJson(this, options);
-			if (host.mIndex != mRelatedStructuralActivity)
-				obj["RelatedStructuralActivity"] = mDatabase[mRelatedStructuralActivity].getJson(this, options);
+			if (host != mRelatingElement)
+				obj["RelatingElement"] = mRelatingElement.getJson(this, options);
+			if (host != mRelatedStructuralActivity)
+				obj["RelatedStructuralActivity"] = mRelatedStructuralActivity.getJson(this, options);
 
 		}
 	}
@@ -589,7 +591,7 @@ namespace GeometryGym.Ifc
 		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
-			if (mRelatingSystem != host.mIndex)
+			if (mRelatingSystem != host)
 				obj["RelatingSystem"] = RelatingSystem.getJson(this, options);
 			//List<IfcObjectDefinition> relatedObjects = RelatedObjects;
 			//JArray array = new JArray();
@@ -670,7 +672,7 @@ namespace GeometryGym.Ifc
 		{
 			base.setJSON(obj, host, options);
 			if(options.Style == SetJsonOptions.JsonStyle.Repository && string.IsNullOrEmpty(mGlobalId))
-				mGlobalId = ParserIfc.EncodeGuid(Guid.NewGuid());
+				setGlobalId(ParserIfc.EncodeGuid(Guid.NewGuid()));
 			string contextIdentifier = ContextIdentifier;
 			if (!string.IsNullOrEmpty(contextIdentifier))
 				obj["ContextIdentifier"] = contextIdentifier;

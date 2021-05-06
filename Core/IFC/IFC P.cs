@@ -444,15 +444,14 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public abstract partial class IfcPlacement : IfcGeometricRepresentationItem /*ABSTRACT SUPERTYPE OF (ONEOF (IfcAxis1Placement ,IfcAxis2Placement2D ,IfcAxis2Placement3D))*/
 	{
-		private IfcCartesianPoint mLocation;// : IfcCartesianPoint;
-		public IfcCartesianPoint Location { get { return mLocation; } set { mLocation = value; } }
+		protected IfcPoint mLocation;// : IfcCartesianPoint;  IfcPoint IFC4x3
 
 		protected IfcPlacement() : base() { }
-		protected IfcPlacement(DatabaseIfc db) : base(db) { Location = db.Factory.Origin; }
-		protected IfcPlacement(IfcCartesianPoint location) : base(location.mDatabase) { Location = location; }
-		protected IfcPlacement(DatabaseIfc db, IfcPlacement p, DuplicateOptions options) : base(db, p, options) { Location = db.Factory.Duplicate(p.Location) as IfcCartesianPoint; }
+		protected IfcPlacement(DatabaseIfc db) : base(db) { }
+		protected IfcPlacement(IfcPoint location) : base(location.Database) { mLocation = location; }
+		protected IfcPlacement(DatabaseIfc db, IfcPlacement p, DuplicateOptions options) : base(db, p, options) { mLocation = db.Factory.Duplicate(p.mLocation) as IfcPoint; }
 
-		public virtual bool IsXYPlane { get { return Location.isOrigin; } }
+		public virtual bool IsXYPlane(double tol) { return mLocation.isOrigin(tol); } 
 	}
 	[Serializable]
 	public partial class IfcPlanarBox : IfcPlanarExtent
@@ -524,6 +523,51 @@ namespace GeometryGym.Ifc
 		protected IfcPoint() : base() { }
 		protected IfcPoint(DatabaseIfc db) : base(db) { }
 		protected IfcPoint(DatabaseIfc db, IfcPoint p, DuplicateOptions options) : base(db, p, options) { }
+
+		internal virtual bool isOrigin(double tol) 
+		{ 
+			return false; 
+		} 
+
+
+	}
+	[Serializable]
+	public partial class IfcPointByDistanceExpression : IfcPoint
+	{
+		internal IfcCurveMeasureSelect mDistanceAlong;// : IfcCurveMeasureSelect;
+		internal double mOffsetLateral = double.NaN;// : OPTIONAL IfcLengthMeasure;
+		internal double mOffsetVertical = double.NaN;// : OPTIONAL IfcLengthMeasure;
+		internal double mOffsetLongitudinal = double.NaN;// : OPTIONAL IfcLengthMeasure;
+		[Obsolete("DEPRECATED IFC4x3", false)]
+		internal bool mAlongHorizontal = false; // IfcBoolean
+		internal IfcCurve mBasisCurve = null;// : IfcCurve
+
+		public IfcCurveMeasureSelect DistanceAlong { get { return mDistanceAlong; } set { mDistanceAlong = value; } }
+		public double OffsetLateral { get { return mOffsetLateral; } set { mOffsetLateral = value; } }
+		public double OffsetVertical { get { return mOffsetVertical; } set { mOffsetVertical = value; } }
+		public double OffsetLongitudinal { get { return mOffsetLongitudinal; } set { mOffsetLongitudinal = value; } }
+		public IfcCurve BasisCurve { get { return mBasisCurve; } set { mBasisCurve = value; } }
+
+		internal IfcPointByDistanceExpression() : base() { }
+		internal IfcPointByDistanceExpression(DatabaseIfc db, IfcPointByDistanceExpression e, DuplicateOptions options) : base(db, e, options)
+		{
+			DistanceAlong = e.DistanceAlong;
+			OffsetLateral = e.OffsetLateral;
+			OffsetVertical = e.OffsetVertical;
+			OffsetLongitudinal = e.OffsetLongitudinal;
+			BasisCurve = db.Factory.Duplicate(e.BasisCurve, options) as IfcCurve;
+		}
+		public IfcPointByDistanceExpression(IfcCurveMeasureSelect distanceAlong, IfcCurve basisCurve) : base(basisCurve.Database) { DistanceAlong = distanceAlong; BasisCurve = basisCurve; }
+		public IfcPointByDistanceExpression(double nonNegativeLength, IfcCurve basisCurve) : base(basisCurve.Database) { DistanceAlong = new IfcNonNegativeLengthMeasure(nonNegativeLength); BasisCurve = basisCurve; }
+		[Obsolete("DEPRECATED IFC4x3", false)]
+		public IfcPointByDistanceExpression(DatabaseIfc db, double distanceAlong) : base(db) { DistanceAlong = new IfcNonNegativeLengthMeasure(distanceAlong); }
+
+
+		internal IfcPointByDistanceExpression Duplicate()
+		{
+			return new IfcPointByDistanceExpression()
+			{ DistanceAlong = DistanceAlong, OffsetLateral = OffsetLateral, OffsetVertical = OffsetVertical, OffsetLongitudinal = OffsetLongitudinal, BasisCurve = BasisCurve };
+		}
 	}
 	[Serializable]
 	public partial class IfcPointOnCurve : IfcPoint
@@ -584,8 +628,8 @@ namespace GeometryGym.Ifc
 
 		internal IfcPolygonalFaceSet() : base() { }
 		internal IfcPolygonalFaceSet(DatabaseIfc db, IfcPolygonalFaceSet s, DuplicateOptions options) : base(db, s, options) { Faces.AddRange(s.Faces.Select(x => db.Factory.Duplicate(x) as IfcIndexedPolygonalFace)); }
-		public IfcPolygonalFaceSet(IfcCartesianPointList3D pl, IEnumerable<IfcIndexedPolygonalFace> faces) : base(pl) { Faces.AddRange(faces); }
-
+		public IfcPolygonalFaceSet(IfcCartesianPointList pl, IEnumerable<IfcIndexedPolygonalFace> faces) : base(pl) { Faces.AddRange(faces); }
+		public IfcPolygonalFaceSet(IfcCartesianPointList pl, params IfcIndexedPolygonalFace[] faces) : base(pl) { Faces.AddRange(faces); }
 	}
 	[Serializable]
 	public partial class IfcPolyline : IfcBoundedCurve
@@ -625,6 +669,36 @@ namespace GeometryGym.Ifc
 		}
 	}
 	[Serializable]
+	public partial class IfcPolynomialCurve : IfcCurve
+	{
+		private IfcPlacement mPosition = null; //: IfcPlacement;
+		private LIST<double> mCoefficientsX = new LIST<double>(); //: OPTIONAL  LIST[2:?] OF IfcReal;
+		private LIST<double> mCoefficientsY = new LIST<double>(); //: OPTIONAL LIST[2:?] OF IfcReal;
+		private LIST<double> mCoefficientsZ = new LIST<double>();//: OPTIONAL LIST[2:?] OF IfcReal;
+
+		public IfcPlacement Position { get { return mPosition; } set { mPosition = value; } }
+		public LIST<double> CoefficientsX { get { return mCoefficientsX; } set { mCoefficientsX = value; } }
+		public LIST<double> CoefficientsY { get { return mCoefficientsY; } set { mCoefficientsY = value; } }
+		public LIST<double> CoefficientsZ { get { return mCoefficientsY; } set { mCoefficientsY = value; } }
+
+		public IfcPolynomialCurve() : base() { }
+		internal IfcPolynomialCurve(DatabaseIfc db, IfcPolynomialCurve polynomial, DuplicateOptions options)
+		: base(db, polynomial, options)
+		{
+			Position = db.Factory.Duplicate(polynomial.Position as BaseClassIfc, options) as IfcPlacement;
+			CoefficientsX.AddRange(polynomial.mCoefficientsX);
+			CoefficientsY.AddRange(polynomial.mCoefficientsY);
+			CoefficientsZ.AddRange(polynomial.mCoefficientsZ);
+		}
+		public IfcPolynomialCurve(IfcPlacement position, IEnumerable<double> coefficientsX, IEnumerable<double> coefficientsY)
+			: base(position.Database)
+		{
+			Position = position;
+			CoefficientsX.AddRange(coefficientsX);
+			CoefficientsY.AddRange(coefficientsY);
+		}
+	}
+	[Serializable]
 	public abstract partial class IfcPort : IfcProduct
 	{   //INVERSE	
 		internal IfcRelConnectsPortToElement mContainedIn = null;//	 :	SET [0:1] OF IfcRelConnectsPortToElement FOR RelatingPort;
@@ -649,7 +723,7 @@ namespace GeometryGym.Ifc
 				if (e.IsNestedBy.Count() == 0)
 					new IfcRelNests(e, this);
 				else
-					e.IsNestedBy[0].RelatedObjects.Add(this);
+					e.IsNestedBy.First().RelatedObjects.Add(this);
 			}
 		}
 		protected IfcPort(IfcElementType t) : base(t.mDatabase)
@@ -665,7 +739,7 @@ namespace GeometryGym.Ifc
 					new IfcRelNests(t, this);
 				}
 				else
-					t.IsNestedBy[0].RelatedObjects.Add(this);
+					t.IsNestedBy.First().RelatedObjects.Add(this);
 			}
 		}
 
@@ -712,11 +786,15 @@ namespace GeometryGym.Ifc
 	}
 	[Serializable]
 	public abstract partial class IfcPositioningElement : IfcProduct //IFC4.1
-	{
+	{   // ABSTRACT SUPERTYPE OF(ONEOF(IfcGrid, IfcLinearPositioningElement, IfcReferent))
+		//INVERSE
+		private SET<IfcRelPositions> mPositions = new SET<IfcRelPositions>();//: SET[0:?] OF IfcRelPositions FOR RelatingPositioningElement; 
 		public IfcRelContainedInSpatialStructure ContainedinStructure { get { return mContainedInStructure; } }
+		public SET<IfcRelPositions> Positions { get { return mPositions; } } 
+
 		protected IfcPositioningElement() : base() { }
 		protected IfcPositioningElement(DatabaseIfc db) : base(db) { }
-		protected IfcPositioningElement(IfcSite host) : base(host.Database) { host.AddElement(this); }
+		protected IfcPositioningElement(IfcSpatialStructureElement host) : base(host.Database) { host.AddElement(this); }
 		protected IfcPositioningElement(IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(placement, representation) { }
 		protected IfcPositioningElement(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
 		protected IfcPositioningElement(DatabaseIfc db, IfcPositioningElement e, DuplicateOptions options) : base(db, e, options) { }
@@ -949,10 +1027,13 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public partial class IfcProcedure : IfcProcess
 	{
-		internal IfcProcedureTypeEnum mProcedureType;// : IfcProcedureTypeEnum;
+		internal IfcProcedureTypeEnum mPredefinedType;// : IfcProcedureTypeEnum;
 		internal string mUserDefinedProcedureType = "$";// : OPTIONAL IfcLabel;
+		
+		public IfcProcedureTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
+
 		internal IfcProcedure() : base() { }
-		internal IfcProcedure(DatabaseIfc db, IfcProcedure p, DuplicateOptions options) : base(db, p, options) { mProcedureType = p.mProcedureType; mUserDefinedProcedureType = p.mUserDefinedProcedureType; }
+		internal IfcProcedure(DatabaseIfc db, IfcProcedure p, DuplicateOptions options) : base(db, p, options) { mPredefinedType = p.mPredefinedType; mUserDefinedProcedureType = p.mUserDefinedProcedureType; }
 	}
 	[Serializable]
 	public partial class IfcProcedureType : IfcTypeProcess //IFC4
@@ -1004,8 +1085,8 @@ namespace GeometryGym.Ifc
 		{
 			if (mOperatesOn.Count == 0)
 				new IfcRelAssignsToProcess(this, related);
-			else if (!mOperatesOn[0].mRelatedObjects.Contains(related))
-				mOperatesOn[0].RelatedObjects.Add(related);
+			else if (!mOperatesOn.First().mRelatedObjects.Contains(related))
+				mOperatesOn.First().RelatedObjects.Add(related);
 			else
 				return false;
 			return true;
@@ -1019,12 +1100,12 @@ namespace GeometryGym.Ifc
 	public abstract partial class IfcProduct : IfcObject, IfcProductSelect, IfcSpatialReferenceSelect // ABSTRACT SUPERTYPE OF (ONEOF (IfcAnnotation ,IfcElement ,IfcGrid ,IfcPort ,IfcProxy ,IfcSpatialElement ,IfcStructuralActivity ,IfcStructuralItem))
 	{
 		private IfcObjectPlacement mObjectPlacement = null; //: OPTIONAL IfcObjectPlacement;
-		private IfcProductDefinitionShape mRepresentation =  null; //: OPTIONAL IfcProductRepresentation 
+		private IfcProductDefinitionShape mRepresentation = null; //: OPTIONAL IfcProductRepresentation 
 		//INVERSE
 		[NonSerialized] internal IfcRelContainedInSpatialStructure mContainedInStructure = null;
-		[NonSerialized] internal SET<IfcRelAssignsToProduct> mReferencedBy = new SET<IfcRelAssignsToProduct>();//	 :	SET OF IfcRelAssignsToProduct FOR RelatingProduct;
-
-		internal SET<IfcRelReferencedInSpatialStructure> mReferencedInStructures = new SET<IfcRelReferencedInSpatialStructure>();//  : 	SET OF IfcRelReferencedInSpatialStructure FOR RelatedElements;
+		[NonSerialized] internal SET<IfcRelAssignsToProduct> mReferencedBy = new SET<IfcRelAssignsToProduct>();// :	SET OF IfcRelAssignsToProduct FOR RelatingProduct;
+		[NonSerialized] internal IfcRelPositions mPositionedRelativeTo = null; // : SET [0:1] OF IfcRelPositions FOR RelatedProducts;
+		[NonSerialized] internal SET<IfcRelReferencedInSpatialStructure> mReferencedInStructures = new SET<IfcRelReferencedInSpatialStructure>();//  : 	SET OF IfcRelReferencedInSpatialStructure FOR RelatedElements;
 
 		public IfcObjectPlacement ObjectPlacement
 		{
@@ -1060,13 +1141,27 @@ namespace GeometryGym.Ifc
 							if (product == null)
 								ObjectPlacement = new IfcLocalPlacement(mDatabase.Factory.XYPlanePlacement);
 							else
-								ObjectPlacement = new IfcLocalPlacement(product.ObjectPlacement, mDatabase.Factory.XYPlanePlacement);
+							{
+								if (mDatabase.mRelease > ReleaseVersion.IFC2x3)
+								{
+									if (product.mContainerCommonPlacement == null)
+									{
+										ObjectPlacement = mContainerCommonPlacement = new IfcLocalPlacement(ObjectPlacement, mDatabase.Factory.XYPlanePlacement);
+										mContainerCommonPlacement.mContainerHost = product;
+									}
+									else
+										ObjectPlacement = product.mContainerCommonPlacement;
+								}
+								else
+									ObjectPlacement = new IfcLocalPlacement(product.ObjectPlacement, mDatabase.Factory.XYPlanePlacement);
+							}
 						}
 					}
 				}
 			}
 		}
 		public SET<IfcRelAssignsToProduct> ReferencedBy { get { return mReferencedBy; } }
+		public IfcRelPositions PositionedRelativeTo { get { return mPositionedRelativeTo; } set { mPositionedRelativeTo = value; } }
 		public SET<IfcRelReferencedInSpatialStructure> ReferencedInStructures { get { return mReferencedInStructures; } }
 
 		internal IfcObjectPlacement mContainerCommonPlacement = null; //GeometryGym common Placement reference for aggregated items
@@ -1152,23 +1247,84 @@ namespace GeometryGym.Ifc
 		public void AddElement(IfcProduct product)
 		{
 			product.detachFromHost();
-			addProduct(product);
-		}
-		internal virtual void detachFromHost()
-		{
-			if (mDecomposes != null)
-				mDecomposes.RelatedObjects.Remove(this);
-		}
-		protected virtual void addProduct(IfcProduct product)
-		{
+			IfcCovering c = product as IfcCovering;
+			if (c != null)
+			{
+				IfcElement element = this as IfcElement;
+				if (element != null)
+				{
+					if (element.mHasCoverings.Count == 0)
+						element.mHasCoverings.Add(new IfcRelCoversBldgElements(element, c));
+					else
+						element.mHasCoverings.First().RelatedCoverings.Add(c);
+					return;
+				}
+				IfcSpace space = this as IfcSpace;
+				if(space != null)
+				{
+					if (space.mHasCoverings.Count == 0)
+						space.mHasCoverings.Add(new IfcRelCoversSpaces(space, c));
+					else
+						space.mHasCoverings.First().RelatedCoverings.Add(c);
+					return;
+				}
+			}
+			IfcSpatialElement spatialElement = this as IfcSpatialElement;
+			if (spatialElement != null)
+			{
+				if (spatialElement.mContainsElements.Count == 0)
+				{
+					new IfcRelContainedInSpatialStructure(product, spatialElement);
+				}
+				else
+					spatialElement.ContainsElements.First().RelatedElements.Add(product);
+				return;
+			}
 			if (mIsDecomposedBy.Count > 0)
-				mIsDecomposedBy[0].RelatedObjects.Add(product);
+				mIsDecomposedBy.First().RelatedObjects.Add(product);
 			else
 			{
 				new IfcRelAggregates(this, product);
 			}
 		}
+		internal void detachFromHost()
+		{
+			if (mDecomposes != null)
+				mDecomposes.RelatedObjects.Remove(this);
+			if (mContainedInStructure != null)
+				mContainedInStructure.RelatedElements.Remove(this);
+		}
 		
+		internal T FindHost<T>() where T : IfcProduct
+		{
+			T result = null;
+			if(mDecomposes != null)
+			{
+				result = mDecomposes.RelatingObject as T;
+				if (result != null)
+					return result;
+				IfcProduct host = mDecomposes.RelatingObject as IfcProduct;
+				if (host != null)
+					return host.FindHost<T>();
+			}	
+			else if(mNests != null)
+			{
+				result = mNests.RelatingObject as T;
+				if (result != null)
+					return result;
+				IfcProduct host = mNests.RelatingObject as IfcProduct;
+				if (host != null)
+					return host.FindHost<T>();
+			}
+			else if(mContainedInStructure != null)
+			{
+				result = mContainedInStructure.RelatingStructure as T;
+				if (result != null)
+					return result;
+				return mContainedInStructure.RelatingStructure.FindHost<T>();
+			}
+			return null;
+		}
 		protected override List<T> Extract<T>(Type type)
 		{
 			List<T> result = base.Extract<T>(type);
@@ -1434,14 +1590,14 @@ namespace GeometryGym.Ifc
 				Name = "UNKNOWN PROJECT";
 		}
 
-		public IfcSpatialElement RootElement() { return (mIsDecomposedBy.Count == 0 ? null : mIsDecomposedBy[0].RelatedObjects[0] as IfcSpatialElement);  }
-		internal IfcSite getSite() { return (mIsDecomposedBy.Count == 0 ? null : mIsDecomposedBy[0].RelatedObjects[0] as IfcSite); }
+		public IfcSpatialElement RootElement() { return (mIsDecomposedBy.Count == 0 ? null : mIsDecomposedBy.First().RelatedObjects.First() as IfcSpatialElement);  }
+		internal IfcSite getSite() { return (mIsDecomposedBy.Count == 0 ? null : mIsDecomposedBy.First().RelatedObjects.First() as IfcSite); }
 		public IfcSite UppermostSite() { return getSite(); }
 		public IfcBuilding UppermostBuilding()
 		{
 			if (mIsDecomposedBy.Count == 0)
 				return null;
-			BaseClassIfc ent = mIsDecomposedBy[0].mRelatedObjects[0];
+			BaseClassIfc ent = mIsDecomposedBy.First().mRelatedObjects.First();
 			IfcBuilding result = ent as IfcBuilding;
 			if (result != null)
 				return result;
@@ -1640,7 +1796,7 @@ namespace GeometryGym.Ifc
 		protected IfcPropertyDefinition() : base() { }
 		internal IfcPropertyDefinition(DatabaseIfc db) : base(db) { }
 		protected IfcPropertyDefinition(IfcPropertyDefinition propertyDefinition) : base(propertyDefinition, false) {  }
-		protected IfcPropertyDefinition(DatabaseIfc db, IfcPropertyDefinition p, DuplicateOptions options) : base(db, p, options.OwnerHistory)
+		protected IfcPropertyDefinition(DatabaseIfc db, IfcPropertyDefinition p, DuplicateOptions options) : base(db, p, options)
 		{
 			foreach (IfcRelAssociates associates in mHasAssociations)
 			{
@@ -1786,9 +1942,8 @@ namespace GeometryGym.Ifc
 	public partial class IfcPropertySet : IfcPropertySetDefinition
 	{
 		public override string StepClassName { get { return "IfcPropertySet"; } }
-		private Dictionary<string,IfcProperty> mHasProperties = new Dictionary<string, IfcProperty>();// : SET [1:?] OF IfcProperty;
-
-		public Dictionary<string,IfcProperty> HasProperties { get { return mHasProperties; } }
+		private Dictionary<string, IfcProperty> mHasProperties = new Dictionary<string, IfcProperty>();// : SET [1:?] OF IfcProperty;
+		public Dictionary<string, IfcProperty> HasProperties { get { return mHasProperties; } }
 
 		internal IfcPropertySet() : base() { }
 		protected IfcPropertySet(IfcObjectDefinition obj) : base(obj.mDatabase,"") { Name = this.GetType().Name; new IfcRelDefinesByProperties(obj, this); }
@@ -1809,6 +1964,8 @@ namespace GeometryGym.Ifc
 		public IfcPropertySet(DatabaseIfc db, string name) : base(db, name) { }
 		public IfcPropertySet(IfcObjectDefinition relatedObject, string name) : base(relatedObject, name) { }
 		public IfcPropertySet(string name, IfcProperty property) : base(property.mDatabase, name) { addProperty(property); }
+		public IfcPropertySet(string name, params IfcProperty[] properties)
+		: base(properties.First().Database, name) { foreach (IfcProperty p in properties) addProperty(p); }
 		public IfcPropertySet(string name, IEnumerable<IfcProperty> properties) : base(properties.First().mDatabase, name)
 		{
 			foreach (IfcProperty p in properties)
@@ -1816,10 +1973,10 @@ namespace GeometryGym.Ifc
 		}
 		public IfcPropertySet(IfcObjectDefinition relatedObject, string name, IfcProperty prop) : base(relatedObject, name) { addProperty(prop); }
 		public IfcPropertySet(IfcObjectDefinition relatedObject, string name, IEnumerable<IfcProperty> props) : base(relatedObject, name) { foreach(IfcProperty p in props) addProperty(p);  }
-		public IfcPropertySet(IfcPropertySetTemplate template, IEnumerable<IfcProperty> properties) : this(template.Name, properties)
-		{
-			Description = template.Description;
-		}
+		public IfcPropertySet(IfcObjectDefinition relatedObject, string name, params IfcProperty[] properties)
+			: base(relatedObject, name) { foreach (IfcProperty p in properties) addProperty(p); }
+		public IfcPropertySet(IfcPropertySetTemplate template, IEnumerable<IfcProperty> properties) 
+			: this(template.Name, properties) { Description = template.Description; }
 		
 		protected override List<T> Extract<T>(Type type)
 		{
@@ -1988,7 +2145,7 @@ namespace GeometryGym.Ifc
 				if (mDefinesOccurrence.Count == 0)
 					new IfcRelDefinesByProperties(relatedObject, this);
 				else
-					mDefinesOccurrence[0].RelatedObjects.Add(relatedObject);
+					mDefinesOccurrence.First().RelatedObjects.Add(relatedObject);
 			}
 		}
 

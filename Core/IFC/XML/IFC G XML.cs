@@ -142,6 +142,28 @@ namespace GeometryGym.Ifc
 				element.AppendChild(mDatabase[el.Index].GetXML(xml.OwnerDocument, "", this, processed));
 		}
 	}
+	public partial class IfcGradientCurve
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			xml.AppendChild(BaseCurve.GetXML(xml.OwnerDocument, "BaseCurve", this, processed));
+			if (EndPoint != null)
+				xml.AppendChild(EndPoint.GetXML(xml.OwnerDocument, "EndPoint", this, processed));
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			foreach (XmlNode child in xml.ChildNodes)
+			{
+				string name = child.Name;
+				if (string.Compare(name, "BaseCurve", true) == 0)
+					BaseCurve = mDatabase.ParseXml<IfcBoundedCurve>(child as XmlElement);
+				else if (string.Compare(name, "EndPoint", true) == 0)
+					EndPoint = mDatabase.ParseXml<IfcPlacement>(child as XmlElement);
+			}
+		}
+	}
 	public partial class IfcGrid : IfcPositioningElement
 	{
 		internal override void ParseXml(XmlElement xml)

@@ -161,6 +161,25 @@ namespace GeometryGym.Ifc
 		public IfcVibrationIsolatorType(DatabaseIfc m, string name, IfcVibrationIsolatorTypeEnum type) : base(m) { Name = name; mPredefinedType = type; }
 	}
 	[Serializable]
+	public partial class IfcVienneseBend : IfcBoundedCurve
+	{
+		private double mStartCurvature = 0; //: IfcCurvatureMeasure;
+		private double mEndCurvature = 0; //: IfcCurvatureMeasure;
+		private double mGravityCenterHeight = 0; //: IfcLengthMeasure;
+		private double mSegmentLength = 0; //: IfcLengthMeasure;
+
+		public double StartCurvature { get { return mStartCurvature; } set { mStartCurvature = value; } }
+		public double EndCurvature { get { return mEndCurvature; } set { mEndCurvature = value; } }
+		public double GravityCenterHeight { get { return mGravityCenterHeight; } set { mGravityCenterHeight = value; } }
+		public double SegmentLength { get { return mSegmentLength; } set { mSegmentLength = value; } }
+
+		public IfcVienneseBend() : base() { }
+		internal IfcVienneseBend(DatabaseIfc db, IfcVienneseBend bend, DuplicateOptions options)
+			: base(db, bend, options) { StartCurvature = bend.StartCurvature; EndCurvature = bend.EndCurvature; GravityCenterHeight = bend.GravityCenterHeight;  SegmentLength = bend.SegmentLength; }
+		public IfcVienneseBend(DatabaseIfc db, double startCurvature, double endCurvature, double gravityCentreHeight, double segmentLength)
+			: base(db) { StartCurvature = startCurvature; EndCurvature = endCurvature; GravityCenterHeight = gravityCentreHeight; SegmentLength = segmentLength; }
+	}
+	[Serializable]
 	public partial class IfcVirtualElement : IfcElement
 	{
 		internal IfcVirtualElement() : base() { }
@@ -259,10 +278,11 @@ namespace GeometryGym.Ifc
 			if (string.IsNullOrEmpty(text) || text == "$")
 				return null;
 			double angle = 0;
-			if (double.TryParse(text, out angle))
-				return new IfcCompoundPlaneAngleMeasure(angle);
+			
 			string str = text.Replace("(", "").Replace(")", "");
 			string[] fields = str.Split(",".ToCharArray());
+			if (fields.Length == 1 && double.TryParse(text, System.Globalization.NumberStyles.Any, ParserSTEP.NumberFormat, out angle))
+				return new IfcCompoundPlaneAngleMeasure(angle);
 			if (fields.Length >= 3)
 			{
 				int degrees = 0, minutes = 0, seconds = 0, microSeconds = 0;
@@ -458,11 +478,30 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public class IfcMassMeasure : IfcMeasureValue { public IfcMassMeasure(double value) : base(value) { } }
 	[Serializable]
+	public class IfcNonNegativeLengthMeasure : IfcMeasureValue, IfcCurveMeasureSelect
+	{
+		public IfcNonNegativeLengthMeasure(double value) : base(value) { }
+		internal IfcNonNegativeLengthMeasure(string str) : base(0)
+		{
+			int icounter = 0;
+			for (; icounter < str.Length; icounter++)
+			{
+				Char c = str[icounter];
+				if (char.IsDigit(c))
+					break;
+				if (c == '.')
+					break;
+			}
+			if (!double.TryParse(str.Substring(icounter), System.Globalization.NumberStyles.Any, ParserSTEP.NumberFormat, out mValue))
+				mValue = 0;
+		}
+	}
+	[Serializable]
 	public partial class IfcNormalisedRatioMeasure : IfcMeasureValue, IfcColourOrFactor { public IfcNormalisedRatioMeasure(double value) : base(Math.Min(1, Math.Max(0, value))) { }  }
 	[Serializable]
 	public class IfcNumericMeasure : IfcMeasureValue { public IfcNumericMeasure(double value) : base(value) { } }
 	[Serializable]
-	public class IfcParameterValue : IfcMeasureValue { public IfcParameterValue(double value) : base(value) { } }
+	public class IfcParameterValue : IfcMeasureValue, IfcCurveMeasureSelect { public IfcParameterValue(double value) : base(value) { } }
 	[Serializable]
 	public class IfcPlaneAngleMeasure : IfcMeasureValue, IfcBendingParameterSelect { public IfcPlaneAngleMeasure(double value) : base(value) { } }
 	[Serializable]
@@ -482,7 +521,7 @@ namespace GeometryGym.Ifc
 				if (c == '.')
 					break;
 			}
-			if (!double.TryParse(str.Substring(icounter), out mValue))
+			if (!double.TryParse(str.Substring(icounter), System.Globalization.NumberStyles.Any, ParserSTEP.NumberFormat, out mValue))
 				mValue = 0;
 		}
 	}
@@ -501,7 +540,7 @@ namespace GeometryGym.Ifc
 				if (c == '.')
 					break;
 			}
-			if (!double.TryParse(str.Substring(icounter), out mValue))
+			if (!double.TryParse(str.Substring(icounter), System.Globalization.NumberStyles.Any, ParserSTEP.NumberFormat, out mValue))
 				mValue = 0;
 		}
 	}
@@ -551,7 +590,7 @@ namespace GeometryGym.Ifc
 		public override Type ValueType { get { return typeof(DateTime); } }
 		public IfcDate(DateTime date) { mDate = date; }
 		public override string ToString() { return "IFCDATE(" + (mDate == DateTime.MinValue ? "$)" : "'" + FormatSTEP(mDate) + "')"); }
-		internal static string FormatSTEP(DateTime date) { return date.Year + (date.Month < 10 ? "-0" : "-") + date.Month + (date.Day < 10 ? "-0" : "-") + date.Day; }
+		public static string FormatSTEP(DateTime date) { return date.Year + (date.Month < 10 ? "-0" : "-") + date.Month + (date.Day < 10 ? "-0" : "-") + date.Day; }
 		internal static string STEPAttribute(DateTime dateTime) { return dateTime == DateTime.MinValue ? "$" : "'" + FormatSTEP(dateTime) + "'"; }
 		internal static DateTime ParseSTEP(string date)
 		{
@@ -589,7 +628,7 @@ namespace GeometryGym.Ifc
 				if (value.Contains("T"))
 				{
 					int hour = int.Parse(value.Substring(11, 2)), min = int.Parse(value.Substring(14, 2));
-					double seconds = double.Parse(value.Substring(17, value.Length - 17));
+					double seconds = double.Parse(value.Substring(17, value.Length - 17), ParserSTEP.NumberFormat);
 					return new DateTime(year, month, day, hour, min, (int)seconds);
 				}
 				return new DateTime(year, month, day);
@@ -695,7 +734,7 @@ namespace GeometryGym.Ifc
 	public partial class IfcReal : IfcSimpleValue
 	{
 		public double Magnitude { get; set; }
-		public override object Value { get { return Magnitude; } set { Magnitude = Convert.ToInt32(value); } }
+		public override object Value { get { return Magnitude; } set { Magnitude = Convert.ToDouble(value); } }
 		public override Type ValueType { get { return typeof(double); } }
 		public IfcReal(double value) { Magnitude = value; }
 		public override string ToString() { return "IFCREAL(" + ParserSTEP.DoubleToString(Magnitude) + ")"; }
@@ -726,7 +765,7 @@ namespace GeometryGym.Ifc
 			{
 				DateTime min = DateTime.MinValue;
 				int hour = int.Parse(value.Substring(1, 2)), minute = int.Parse(value.Substring(4, 2));
-				double seconds = double.Parse(value.Substring(7, value.Length - 7));
+				double seconds = double.Parse(value.Substring(7, value.Length - 7), ParserSTEP.NumberFormat);
 				return new DateTime(min.Year, min.Month, min.Day, hour, minute, (int)seconds);
 			}
 			catch (Exception) { }

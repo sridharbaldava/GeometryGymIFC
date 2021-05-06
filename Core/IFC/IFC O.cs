@@ -37,7 +37,6 @@ namespace GeometryGym.Ifc
 		internal IfcRelDefinesByObject mIsDeclaredBy = null;
 		internal List<IfcRelDefinesByObject> mDeclares = new List<IfcRelDefinesByObject>();
 		internal IfcRelDefinesByType mIsTypedBy = null;
-		internal List<IfcRelDefinesByProperties> mIsDefinedBy = new List<IfcRelDefinesByProperties>();
 
 		public string ObjectType { get { return mObjectType; } set { mObjectType = value; } }
 		public IfcRelDefinesByType IsTypedBy
@@ -60,7 +59,7 @@ namespace GeometryGym.Ifc
 				}
 			}
 		}
-		public ReadOnlyCollection<IfcRelDefinesByProperties> IsDefinedBy { get { return new ReadOnlyCollection<IfcRelDefinesByProperties>(mIsDefinedBy); } }
+		public SET<IfcRelDefinesByProperties> IsDefinedBy { get { return mIsDefinedBy; } }
 
 		public IfcTypeObject RelatingType() { return (mIsTypedBy == null ? null : mIsTypedBy.RelatingType); }
 		public void setRelatingType(IfcTypeObject typeObject)
@@ -96,15 +95,9 @@ namespace GeometryGym.Ifc
 			}
 
 		}
-		protected IfcObject(DatabaseIfc db, IfcObject o, DuplicateOptions options) : base(db, o, options)//, bool downStream) : base(db, o, downStream)
+		protected IfcObject(DatabaseIfc db, IfcObject o, DuplicateOptions options) : base(db, o, options)
 		{
 			mObjectType = o.mObjectType;
-			foreach (IfcRelDefinesByProperties rdp in o.mIsDefinedBy)
-			{
-				IfcPropertySetDefinition pset = db.Factory.DuplicatePropertySet(rdp.RelatingPropertyDefinition, options);
-				if(pset != null)
-					pset.RelateObjectDefinition(this);
-			}
 			
 			if(o.mIsTypedBy != null)
 				IsTypedBy = db.Factory.Duplicate(o.mIsTypedBy, options) as IfcRelDefinesByType;
@@ -174,16 +167,35 @@ namespace GeometryGym.Ifc
 		[NonSerialized] internal IfcRelNests mNests = null;//	 :	SET [0:1] OF IfcRelNests FOR RelatedObjects;
 		private SET<IfcRelNests> mIsNestedBy = new SET<IfcRelNests>();//	 :	SET OF IfcRelNests FOR RelatingObject;
 		internal IfcRelDeclares mHasContext = null;// :	SET [0:1] OF IfcRelDeclares FOR RelatedDefinitions; 
-		internal List<IfcRelAggregates> mIsDecomposedBy = new List<IfcRelAggregates>();//	 : 	SET OF IfcRelDecomposes FOR RelatingObject;
+		internal SET<IfcRelAggregates> mIsDecomposedBy = new SET<IfcRelAggregates>();//	 : 	SET OF IfcRelDecomposes FOR RelatingObject;
 		[NonSerialized] internal IfcRelAggregates mDecomposes = null;//	 : 	SET [0:1] OF IfcRelDecomposes FOR RelatedObjects; IFC4  IfcRelAggregates
 		internal SET<IfcRelAssociates> mHasAssociations = new SET<IfcRelAssociates>();//	 : 	SET OF IfcRelAssociates FOR RelatedObjects;
+		internal SET<IfcRelDefinesByProperties> mIsDefinedBy = new SET<IfcRelDefinesByProperties>();
 
 		public SET<IfcRelAssigns> HasAssignments { get { return mHasAssignments; } set { mHasAssignments.Clear(); if (value != null) { mHasAssignments.CollectionChanged -= mHasAssignments_CollectionChanged; mHasAssignments = value; mHasAssignments.CollectionChanged += mHasAssignments_CollectionChanged; } } }
 		public IfcRelNests Nests { get { return mNests; } set { if (mNests != null) mNests.mRelatedObjects.Remove(this); mNests = value; if (value != null && !value.mRelatedObjects.Contains(this)) value.mRelatedObjects.Add(this); } }
 		public SET<IfcRelNests> IsNestedBy { get { return mIsNestedBy; } set { mIsNestedBy.Clear(); if (value != null) { mIsNestedBy.CollectionChanged -= mIsNestedBy_CollectionChanged; mIsNestedBy = value; mIsNestedBy.CollectionChanged += mIsNestedBy_CollectionChanged; } } }
 		public IfcRelDeclares HasContext { get { return mHasContext; } set { mHasContext = value; } }
-		public ReadOnlyCollection<IfcRelAggregates> IsDecomposedBy { get { return new ReadOnlyCollection<IfcRelAggregates>(mIsDecomposedBy); } }
-		public IfcRelAggregates Decomposes { get { return mDecomposes; } set { if (mDecomposes != null) mDecomposes.mRelatedObjects.Remove(this); mDecomposes = value; if (value != null && !value.mRelatedObjects.Contains(this)) value.mRelatedObjects.Add(this); } }
+		public SET<IfcRelAggregates> IsDecomposedBy { get { return mIsDecomposedBy; } }
+		public IfcRelAggregates Decomposes
+		{
+			get { return mDecomposes; } 
+			set
+			{ 
+				if (mDecomposes != null)
+					mDecomposes.mRelatedObjects.Remove(this);
+				IfcProduct product = this as IfcProduct;
+				if (product != null)
+				{
+					IfcRelContainedInSpatialStructure contained = product.mContainedInStructure;
+					if (contained != null)
+						contained.RelatedElements.Remove(product);
+				}
+				mDecomposes = value; 
+				if (value != null && !value.mRelatedObjects.Contains(this))
+					value.mRelatedObjects.Add(this); 
+			} 
+		}
 		public SET<IfcRelAssociates> HasAssociations { get { return mHasAssociations; } }
 
 		protected IfcObjectDefinition() : base() { }
@@ -195,7 +207,7 @@ namespace GeometryGym.Ifc
 				//todo
 			}
 		}
-		protected IfcObjectDefinition(DatabaseIfc db, IfcObjectDefinition o, DuplicateOptions options) : base(db, o, options.OwnerHistory)
+		protected IfcObjectDefinition(DatabaseIfc db, IfcObjectDefinition o, DuplicateOptions options) : base(db, o, options)
 		{
 			if (options.DuplicateHost)
 			{
@@ -211,12 +223,24 @@ namespace GeometryGym.Ifc
 				if (mHasContext != null)
 					(db.Factory.Duplicate(mHasContext, new DuplicateOptions(options) { DuplicateDownstream = false }) as IfcRelDeclares).RelatedDefinitions.Add(this);	
 			}
-			foreach (IfcRelAssociates associates in o.mHasAssociations)
+			if (options.DuplicateAssociations)
 			{
-				IfcRelAssociates dup = db.Factory.Duplicate(associates, new DuplicateOptions(options) { DuplicateDownstream = true }) as IfcRelAssociates;
-				dup.RelatedObjects.Add(this);
+				foreach (IfcRelAssociates associates in o.mHasAssociations)
+				{
+					IfcRelAssociates dup = db.Factory.Duplicate(associates, new DuplicateOptions(options) { DuplicateDownstream = true }) as IfcRelAssociates;
+					dup.RelatedObjects.Add(this);
+				}
 			}
-			if(options.DuplicateDownstream)
+			if (options.DuplicateProperties)
+			{
+				foreach (IfcRelDefinesByProperties rdp in o.mIsDefinedBy)
+				{
+					IfcPropertySetDefinition pset = db.Factory.DuplicatePropertySet(rdp.RelatingPropertyDefinition, options);
+					if (pset != null)
+						pset.RelateObjectDefinition(this);
+				}
+			}
+			if (options.DuplicateDownstream)
 			{
 				foreach (IfcRelAggregates rag in o.mIsDecomposedBy)
 					mDatabase.Factory.Duplicate(rag, options);
@@ -294,27 +318,35 @@ namespace GeometryGym.Ifc
 
 		public void AddNested(IfcObjectDefinition o)
 		{
-			if (o.mNests != null)
-				o.mNests.RelatedObjects.Remove(o);
+			o.removeFromExistingHost();
 			if (mIsNestedBy.Count() == 0)
 			{
 				IfcRelNests rn = new IfcRelNests(this, o);
 			}
-			else mIsNestedBy[0].RelatedObjects.Add(o);
+			else 
+				mIsNestedBy.First().RelatedObjects.Add(o);
 		}
 		public void AddAggregated(IfcObjectDefinition o)
 		{
-			if (o.mDecomposes != null)
-				o.mDecomposes.mRelatedObjects.Remove(o);
+			o.removeFromExistingHost();
 			if (mIsDecomposedBy.Count == 0)
 			{
 				new IfcRelAggregates(this, o);
 			}
 			else
-				mIsDecomposedBy[0].RelatedObjects.Add(o);
+				mIsDecomposedBy.First().RelatedObjects.Add(o);
+		}
+		private void removeFromExistingHost()
+		{
+			if (mDecomposes != null)
+				mDecomposes.mRelatedObjects.Remove(this);
+			if (mNests != null)
+				mNests.mRelatedObjects.Remove(this);
+			IfcProduct product = this as IfcProduct;
+			if (product != null && product.mContainedInStructure != null)
+				product.mContainedInStructure.RelatedElements.Remove(product);
 		}
 		
-		internal virtual void relateNested(IfcRelNests n) { mIsNestedBy.Add(n); }
 		
 		internal IfcMaterialSelect RelatedMaterial() { return (mMaterialSelectIFC4 != null ? mMaterialSelectIFC4 : GetMaterialSelect()); }
 		protected virtual IfcMaterialSelect GetMaterialSelect()
@@ -377,18 +409,18 @@ namespace GeometryGym.Ifc
 					}
 					else
 					{
-						if (profileDef.mHasProperties[0].mAssociates == null)
+						if (profileDef.mHasProperties.First().mAssociates == null)
 						{
-							new IfcRelAssociatesProfileProperties(this, profileDef.mHasProperties[0]);
+							new IfcRelAssociatesProfileProperties(this, profileDef.mHasProperties.First());
 						}
 						else
-							profileDef.mHasProperties[0].mAssociates.RelatedObjects.Add(this);
+							profileDef.mHasProperties.First().mAssociates.RelatedObjects.Add(this);
 					}
 				}
 			}
 			for (int icounter = 0; icounter < mHasAssociations.Count; icounter++)
 			{
-				IfcRelAssociatesMaterial rm = mHasAssociations[icounter] as IfcRelAssociatesMaterial;
+				IfcRelAssociatesMaterial rm = mHasAssociations.First() as IfcRelAssociatesMaterial;
 				if (rm != null)
 					rm.RelatedObjects.Remove(this);
 			}
@@ -437,12 +469,12 @@ namespace GeometryGym.Ifc
 				if(typeProduct != null && typeProduct.ObjectTypeOf != null)
 				{
 					SET<IfcObject> related = typeProduct.ObjectTypeOf.RelatedObjects;
-					IfcMaterialLayerSet layerSet = related[0].detectMaterialLayerSet();
+					IfcMaterialLayerSet layerSet = related.First().detectMaterialLayerSet();
 					if (layerSet == null)
 						return null;
 					for(int icounter = 1; icounter < related.Count; icounter++)
 					{
-						IfcMaterialLayerSet set = related[icounter].detectMaterialLayerSet();
+						IfcMaterialLayerSet set = related.First().detectMaterialLayerSet();
 						if (set == null)
 							continue;
 						if (!set.isDuplicate(layerSet, mDatabase.Tolerance))
@@ -527,8 +559,8 @@ namespace GeometryGym.Ifc
 	{
 		private IfcObjectPlacement mPlacementRelTo = null;// : OPTIONAL IfcObjectPlacement;
 		//INVERSE 
-		internal List<IfcProduct> mPlacesObject = new List<IfcProduct>();// : SET [0:?] OF IfcProduct FOR ObjectPlacement; ifc2x3 [1:?] 
-		internal List<IfcObjectPlacement> mReferencedByPlacements = new List<IfcObjectPlacement>();// : SET [0:?] OF IfcLocalPlacement FOR PlacementRelTo;
+		internal SET<IfcProduct> mPlacesObject = new SET<IfcProduct>();// : SET [0:?] OF IfcProduct FOR ObjectPlacement; ifc2x3 [1:?] 
+		internal SET<IfcObjectPlacement> mReferencedByPlacements = new SET<IfcObjectPlacement>();// : SET [0:?] OF IfcLocalPlacement FOR PlacementRelTo;
 		internal IfcProduct mContainerHost = null;
 
 		public IfcObjectPlacement PlacementRelTo
@@ -543,8 +575,11 @@ namespace GeometryGym.Ifc
 					value.mReferencedByPlacements.Add(this);
 			}
 		}
+		public SET<IfcProduct> PlacesObject { get { return mPlacesObject; } set { mPlacesObject = value; } }
+		public SET<IfcObjectPlacement> ReferencedByPlacements { get { return mReferencedByPlacements; } set { mReferencedByPlacements = value; } }
 
 		protected IfcObjectPlacement() : base() { }
+		protected IfcObjectPlacement(IfcObjectPlacement placementRelTo) : base(placementRelTo.Database) { PlacementRelTo = placementRelTo; }
 		protected IfcObjectPlacement(DatabaseIfc db) : base(db) { }
 		protected IfcObjectPlacement(DatabaseIfc db, IfcProduct p) : base(db)
 		{
@@ -570,7 +605,7 @@ namespace GeometryGym.Ifc
 		}
 		protected virtual IfcObjectPlacement DuplicateWorker(DatabaseIfc db) { return null; }
 
-		internal virtual bool isXYPlane { get { return false; } }
+		internal virtual bool isXYPlane(double tol) { return false; }
 	}
 	[Serializable]
 	public partial class IfcObjective : IfcConstraint
@@ -625,7 +660,7 @@ namespace GeometryGym.Ifc
 	public abstract partial class IfcOffsetCurve : IfcCurve //ABSTRACT SUPERTYPE OF(ONEOF(IfcOffsetCurve2D, IfcOffsetCurve3D, IfcOffsetCurveByDistances))
 	{
 		private IfcCurve mBasisCurve;//: IfcCurve;
-		public IfcCurve BasisCurve { get { return mBasisCurve; } set { mBasisCurve = value; } }
+		public IfcCurve BasisCurve { get { return mBasisCurve; } set { mBasisCurve = value; value.mBasisCurveOfOffsets.Add(this); } }
 
 		protected IfcOffsetCurve() : base() { }
 		protected IfcOffsetCurve(DatabaseIfc db, IfcOffsetCurve c, DuplicateOptions options) : base(db, c, options) { BasisCurve = db.Factory.Duplicate(c.BasisCurve) as IfcCurve; }
@@ -661,15 +696,15 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public partial class IfcOffsetCurveByDistances : IfcOffsetCurve
 	{
-		private LIST<IfcDistanceExpression> mOffsetValues = new LIST<IfcDistanceExpression>();// : LIST[1:?] OF IfcDistanceExpression;
+		private LIST<IfcPointByDistanceExpression> mOffsetValues = new LIST<IfcPointByDistanceExpression>();// : LIST[1:?] OF IfcDistanceExpression;
 		private string mTag = "";// : OPTIONAL IfcLabel;
 
-		public LIST<IfcDistanceExpression> OffsetValues { get { return mOffsetValues; } set { mOffsetValues = value; } }
+		public LIST<IfcPointByDistanceExpression> OffsetValues { get { return mOffsetValues; } set { mOffsetValues = value; } }
 		public string Tag { get { return mTag; } set { mTag = value; } }
 
 		internal IfcOffsetCurveByDistances() : base() { }
-		internal IfcOffsetCurveByDistances(DatabaseIfc db, IfcOffsetCurveByDistances c, DuplicateOptions options) : base(db, c, options) { OffsetValues.AddRange(c.OffsetValues.Select(x => db.Factory.Duplicate(x) as IfcDistanceExpression)); Tag = c.Tag; }
-		public IfcOffsetCurveByDistances(IfcCurve basis, IEnumerable<IfcDistanceExpression> offsets) : base(basis) { OffsetValues.AddRange(offsets); }
+		internal IfcOffsetCurveByDistances(DatabaseIfc db, IfcOffsetCurveByDistances c, DuplicateOptions options) : base(db, c, options) { OffsetValues.AddRange(c.OffsetValues.Select(x => db.Factory.Duplicate(x) as IfcPointByDistanceExpression)); Tag = c.Tag; }
+		public IfcOffsetCurveByDistances(IfcCurve basis, IEnumerable<IfcPointByDistanceExpression> offsets) : base(basis) { OffsetValues.AddRange(offsets); }
 	}
 
 	[Obsolete("DEPRECATED IFC4", false)]
@@ -727,8 +762,10 @@ namespace GeometryGym.Ifc
 		{
 			mPredefinedType = e.mPredefinedType;
 			if (options.DuplicateDownstream)
+			{
 				foreach (IfcRelFillsElement fills in e.HasFillings)
 					mDatabase.Factory.Duplicate(fills, options);
+			}
 		}
 		internal IfcOpeningElement(DatabaseIfc db) : base(db) { }
 		public IfcOpeningElement(IfcElement host, IfcObjectPlacement placement, IfcProductDefinitionShape rep) : base(host.mDatabase)

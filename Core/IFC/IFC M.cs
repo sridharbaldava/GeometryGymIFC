@@ -50,13 +50,15 @@ namespace GeometryGym.Ifc
 	public partial class IfcMapConversion : IfcCoordinateOperation //IFC4
 	{
 		internal double mEastings, mNorthings, mOrthogonalHeight;// :  	IfcLengthMeasure;
-		internal double mXAxisAbscissa = double.NaN, mXAxisOrdinate = double.NaN, mScale = double.NaN;// 	:	OPTIONAL IfcReal;
+		internal double mXAxisAbscissa = double.NaN, mXAxisOrdinate = double.NaN, mScale = double.NaN, mScaleY = double.NaN, mScaleZ = double.NaN;// 	:	OPTIONAL IfcReal;
 		public double Eastings { get { return mEastings; } set { mEastings = value; } }  //IfcLengthMeasure
 		public double Northings { get { return mNorthings; } set { mNorthings = value; } }  //IfcLengthMeasure
 		public double OrthogonalHeight { get { return mOrthogonalHeight; } set { mOrthogonalHeight = value; } }  //IfcLengthMeasure
 		public double XAxisAbscissa { get { return mXAxisAbscissa; } set { mXAxisAbscissa = value; } }  // OPTIONAL  IfcReal
 		public double XAxisOrdinate { get { return mXAxisOrdinate; } set { mXAxisOrdinate = value; } }  // OPTIONAL IfcReal
 		public double Scale { get { return double.IsNaN( mScale) ? 1 : mScale; } set { mScale = value; } }  // OPTIONAL  IfcReal
+		public double ScaleY { get { return double.IsNaN( mScaleY) ? 1 : mScaleY; } set { mScaleY = value; } }  // OPTIONAL  IfcReal
+		public double ScaleZ { get { return double.IsNaN( mScaleZ) ? 1 : mScaleZ; } set { mScaleZ = value; } }  // OPTIONAL  IfcReal
 
 		internal IfcMapConversion() : base() { }
 		internal IfcMapConversion(DatabaseIfc db, IfcMapConversion c) : base(db, c) { mEastings = c.mEastings; mNorthings = c.mNorthings; mOrthogonalHeight = c.mOrthogonalHeight; mXAxisAbscissa = c.mXAxisAbscissa; mXAxisOrdinate = c.mXAxisOrdinate; mScale = c.mScale; }
@@ -71,11 +73,11 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public partial class IfcMappedItem : IfcRepresentationItem
 	{
-		private int mMappingSource;// : IfcRepresentationMap;
-		private int mMappingTarget;// : IfcCartesianTransformationOperator;
+		private IfcRepresentationMap mMappingSource;// : IfcRepresentationMap;
+		private IfcCartesianTransformationOperator mMappingTarget;// : IfcCartesianTransformationOperator;
 
-		public IfcRepresentationMap MappingSource { get { return mDatabase[mMappingSource] as IfcRepresentationMap; } set { mMappingSource = value.mIndex; value.mMapUsage.Add(this); } }
-		public IfcCartesianTransformationOperator MappingTarget { get { return mDatabase[mMappingTarget] as IfcCartesianTransformationOperator; } set { mMappingTarget = value.mIndex;  } }
+		public IfcRepresentationMap MappingSource { get { return mMappingSource as IfcRepresentationMap; } set { mMappingSource = value; value.mMapUsage.Add(this); } }
+		public IfcCartesianTransformationOperator MappingTarget { get { return mMappingTarget; } set { mMappingTarget = value;  } }
 
 		internal IfcMappedItem() : base() { }
 		internal IfcMappedItem(DatabaseIfc db, IfcMappedItem i, DuplicateOptions options) : base(db, i, options) { MappingSource = db.Factory.Duplicate(i.MappingSource) as IfcRepresentationMap; MappingTarget = db.Factory.Duplicate(i.MappingTarget) as IfcCartesianTransformationOperator; }
@@ -84,7 +86,7 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public partial class IfcMarineFacility : IfcFacility
 	{
-		private IfcMarineFacilityTypeEnum mPredefinedType = IfcMarineFacilityTypeEnum.NOTDEFINED; //: IfcMarineFacilityTypeEnum;
+		private IfcMarineFacilityTypeEnum mPredefinedType = IfcMarineFacilityTypeEnum.NOTDEFINED; //: OPTIONAL IfcMarineFacilityTypeEnum;
 		public IfcMarineFacilityTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
 
 		public IfcMarineFacility() : base() { }
@@ -192,14 +194,11 @@ namespace GeometryGym.Ifc
 		
 		internal IfcMaterialConstituent() : base() { }
 		internal IfcMaterialConstituent(DatabaseIfc db, IfcMaterialConstituent m) : base(db, m) { mName = m.mName; mDescription = m.mDescription; Material = db.Factory.Duplicate(m.Material) as IfcMaterial; mFraction = m.mFraction; mCategory = m.mCategory; }
-		public IfcMaterialConstituent(string name, string desc, IfcMaterial mat, double fraction, string category)
+		public IfcMaterialConstituent(string name, IfcMaterial mat)
 			: base(mat.mDatabase)
 		{
 			Name = name;
-			Description = desc;
 			mMaterial = mat.mIndex;
-			mFraction = fraction;
-			Category = category;
 		}
 	}
 	[Serializable]
@@ -223,11 +222,10 @@ namespace GeometryGym.Ifc
 			foreach (IfcMaterialConstituent constituent in m.MaterialConstituents.Values)
 				MaterialConstituents[constituent.Name] = db.Factory.Duplicate(constituent) as IfcMaterialConstituent;
 		}
-		public IfcMaterialConstituentSet(string name, string desc, IEnumerable<IfcMaterialConstituent> materialConstituents)
+		public IfcMaterialConstituentSet(string name, IEnumerable<IfcMaterialConstituent> materialConstituents)
 			: base(materialConstituents.First().Database)
 		{
 			Name = name;
-			Description = desc;
 			foreach (IfcMaterialConstituent constituent in materialConstituents)
 				mMaterialConstituents[constituent.Name] = constituent;
 		}
@@ -302,7 +300,7 @@ namespace GeometryGym.Ifc
 
 		public void Associate(IfcDefinitionSelect obj)
 		{
-			IfcRelAssociatesMaterial associates = (mAssociatedTo.Count == 0 ? new IfcRelAssociatesMaterial(this) : mAssociatedTo[0]);
+			IfcRelAssociatesMaterial associates = (mAssociatedTo.Count == 0 ? new IfcRelAssociatesMaterial(this) : mAssociatedTo.First());
 			associates.RelatedObjects.Add(obj);
 		}
 		public void Associate(IfcRelAssociatesMaterial associates) { if(!mAssociatedTo.Contains(associates)) mAssociatedTo.Add(associates); }
@@ -323,16 +321,16 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public partial class IfcMaterialDefinitionRepresentation :  IfcProductRepresentation<IfcStyledRepresentation, IfcStyledItem>
 	{
-		internal int mRepresentedMaterial;// : IfcMaterial;
-		public IfcMaterial RepresentedMaterial { get { return mDatabase[mRepresentedMaterial] as IfcMaterial; } set { mRepresentedMaterial = value.mIndex; if (value.mHasRepresentation != this) value.HasRepresentation = this; } }
+		internal IfcMaterial mRepresentedMaterial;// : IfcMaterial;
+		public IfcMaterial RepresentedMaterial { get { return mRepresentedMaterial; } set { mRepresentedMaterial = value; if (value.mHasRepresentation != this) value.HasRepresentation = this; } }
 
 		internal IfcMaterialDefinitionRepresentation() : base() { }
 		internal IfcMaterialDefinitionRepresentation(DatabaseIfc db, IfcMaterialDefinitionRepresentation r, DuplicateOptions options) : base(db, r, options)
 		{
 			RepresentedMaterial = db.Factory.Duplicate(r.RepresentedMaterial) as IfcMaterial;
 		}
-		public IfcMaterialDefinitionRepresentation(IfcStyledRepresentation representation, IfcMaterial mat) : base(representation) { mRepresentedMaterial = mat.mIndex; mat.mHasRepresentation = this; }
-		public IfcMaterialDefinitionRepresentation(IEnumerable<IfcStyledRepresentation> representations, IfcMaterial mat) : base(representations) { mRepresentedMaterial = mat.mIndex; mat.mHasRepresentation = this; }
+		public IfcMaterialDefinitionRepresentation(IfcStyledRepresentation representation, IfcMaterial mat) : base(representation) { RepresentedMaterial = mat; }
+		public IfcMaterialDefinitionRepresentation(IEnumerable<IfcStyledRepresentation> representations, IfcMaterial mat) : base(representations) { RepresentedMaterial = mat; }
 	}
 	[Serializable]
 	public partial class IfcMaterialLayer : IfcMaterialDefinition
@@ -494,7 +492,7 @@ namespace GeometryGym.Ifc
 
 		public void Associate(IfcDefinitionSelect obj)
 		{
-			IfcRelAssociatesMaterial associates = (mAssociatedTo.Count == 0 ? new IfcRelAssociatesMaterial(this) : mAssociatedTo[0]);
+			IfcRelAssociatesMaterial associates = (mAssociatedTo.Count == 0 ? new IfcRelAssociatesMaterial(this) : mAssociatedTo.First());
 			associates.RelatedObjects.Add(obj);
 		}
 		public void Associate(IfcRelAssociatesMaterial associates) { if(!mAssociatedTo.Contains(associates)) mAssociatedTo.Add(associates); }
@@ -576,7 +574,6 @@ namespace GeometryGym.Ifc
 		}
 		public IfcMaterialProfileSet(string name, List<IfcMaterialProfile> profiles) : base(profiles[0].mDatabase)
 		{
-			List<IfcProfileDef> defs = new List<IfcProfileDef>(profiles.Count);
 			for (int icounter = 0; icounter < profiles.Count; icounter++)
 			{
 				IfcMaterialProfile mp = profiles[icounter];
@@ -585,11 +582,7 @@ namespace GeometryGym.Ifc
 				else
 					throw new Exception("Material Profile can be assigned to only a single profile set");
 				mMaterialProfiles.Add(mp);
-				if (mp.mProfile != null)
-					defs.Add(mp.mProfile);
 			}
-			if (defs.Count > 0)
-				CompositeProfile = new IfcCompositeProfileDef(name, defs);
 		}
 	}
 	[Serializable]
@@ -653,7 +646,7 @@ namespace GeometryGym.Ifc
 		internal IfcMaterialProperties(DatabaseIfc db, IfcMaterialProperties p, DuplicateOptions options) : base(db, p, options) { Material = db.Factory.Duplicate(p.Material, options) as IfcMaterialDefinition; }
 		protected IfcMaterialProperties(IfcMaterialDefinition mat) : base(mat.mDatabase) { Name = this.GetType().Name; Material = mat; }
 		public IfcMaterialProperties(string name, IfcMaterialDefinition mat) : base(mat.mDatabase) { Name = name; Material = mat; }
-		internal IfcMaterialProperties(string name, List<IfcProperty> props, IfcMaterialDefinition mat) : base(props) { Name = name; Material = mat; }
+		internal IfcMaterialProperties(string name, IEnumerable<IfcProperty> props, IfcMaterialDefinition mat) : base(props) { Name = name; Material = mat; }
 	}
 	[Serializable]
 	public partial class IfcMaterialRelationship : IfcResourceLevelRelationship //IFC4
@@ -720,7 +713,7 @@ namespace GeometryGym.Ifc
 		}
 		public void Associate(IfcDefinitionSelect obj)
 		{
-			IfcRelAssociatesMaterial associates = (mAssociatedTo.Count == 0 ? new IfcRelAssociatesMaterial(this) : mAssociatedTo[0]);
+			IfcRelAssociatesMaterial associates = (mAssociatedTo.Count == 0 ? new IfcRelAssociatesMaterial(this) : mAssociatedTo.First());
 			associates.RelatedObjects.Add(obj);
 		}
 		public void Associate(IfcRelAssociatesMaterial associates) { if (!mAssociatedTo.Contains(associates)) mAssociatedTo.Add(associates); }
@@ -752,10 +745,10 @@ namespace GeometryGym.Ifc
 				IfcDerivedMeasureValue dm = mValueComponent as IfcDerivedMeasureValue;
 				if (dm != null)
 					return dm.Measure * sif;
-				if (double.TryParse(mValueComponent.ValueString, out d))
+				if (double.TryParse(mValueComponent.ValueString, System.Globalization.NumberStyles.Any, ParserSTEP.NumberFormat, out d))
 					return d * sif;
 			}
-			if (double.TryParse(mVal, out d))
+			if (double.TryParse(mVal, System.Globalization.NumberStyles.Any, ParserSTEP.NumberFormat, out d))
 				return d * sif;
 			return sif;
 		}

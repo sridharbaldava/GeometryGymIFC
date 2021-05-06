@@ -38,7 +38,7 @@ namespace GeometryGym.Ifc
 			{
 				string name = child.Name;
 				if (string.Compare(name, "ContainerProfile") == 0)
-					ContainerProfile = mDatabase.ParseXml<IfcProfileDef>(child as XmlElement);
+					ParentProfile = mDatabase.ParseXml<IfcProfileDef>(child as XmlElement);
 				else if (string.Compare(name, "Operator") == 0)
 					Operator = mDatabase.ParseXml<IfcCartesianTransformationOperator2D>(child as XmlElement);
 			}
@@ -48,7 +48,7 @@ namespace GeometryGym.Ifc
 		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
-			xml.AppendChild(ContainerProfile.GetXML(xml.OwnerDocument, "ContainerProfile", this, processed));
+			xml.AppendChild(ParentProfile.GetXML(xml.OwnerDocument, "ContainerProfile", this, processed));
 			xml.AppendChild(Operator.GetXML(xml.OwnerDocument, "Operator", this, processed));
 			setAttribute(xml, "Label", Label);
 		}
@@ -183,20 +183,26 @@ namespace GeometryGym.Ifc
 		{
 			base.SetXML(xml, host, processed);
 			xml.AppendChild(Directrix.GetXML(xml.OwnerDocument, "Directrix", this, processed));
-			if (!double.IsNaN(mStartParam))
-				xml.SetAttribute("StartParam", mStartParam.ToString());
-			if (!double.IsNaN(mEndParam))
-				xml.SetAttribute("EndParam", mEndParam.ToString());
+			if (mDatabase != null && mDatabase.Release < ReleaseVersion.IFC4X3_RC2)
+			{
+				IfcParameterValue startParameter = mStartParam as IfcParameterValue;
+				if (startParameter != null)
+					xml.SetAttribute("StartParam", startParameter.Measure.ToString());
+				IfcParameterValue endParameter = mEndParam as IfcParameterValue;
+				if (endParameter != null)
+					xml.SetAttribute("EndParam", endParameter.Measure.ToString());
+			}
 		}
 		internal override void ParseXml(XmlElement xml)
 		{
 			base.ParseXml(xml);
 			string startParam = xml.GetAttribute("StartParam");
-			if (!string.IsNullOrEmpty(startParam))
-				double.TryParse(startParam, out mStartParam);
+			double param = 0;
+			if (!string.IsNullOrEmpty(startParam) && double.TryParse(startParam, out param))
+				mStartParam = new IfcParameterValue(param);
 			string endParam = xml.GetAttribute("EndParam");
-			if (!string.IsNullOrEmpty(endParam))
-				double.TryParse(endParam, out mEndParam);
+			if (!string.IsNullOrEmpty(endParam) && double.TryParse(endParam, out param))
+				mEndParam = new IfcParameterValue(param);
 			foreach (XmlNode child in xml.ChildNodes)
 			{
 				string name = child.Name;
@@ -225,9 +231,9 @@ namespace GeometryGym.Ifc
 				if (string.Compare(name, "Directrix", true) == 0)
 					Directrix = mDatabase.ParseXml<IfcCurve>(child as XmlElement);
 				else if (string.Compare(name, "StartDistance", true) == 0)
-					StartDistance = mDatabase.ParseXml<IfcDistanceExpression>(child as XmlElement);
+					StartDistance = mDatabase.ParseXml<IfcPointByDistanceExpression>(child as XmlElement);
 				else if (string.Compare(name, "EndDistance", true) == 0)
-					EndDistance = mDatabase.ParseXml<IfcDistanceExpression>(child as XmlElement);
+					EndDistance = mDatabase.ParseXml<IfcPointByDistanceExpression>(child as XmlElement);
 			}
 		}
 	}

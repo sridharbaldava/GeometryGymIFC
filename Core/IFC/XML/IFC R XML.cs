@@ -188,6 +188,7 @@ namespace GeometryGym.Ifc
 				xml.AppendChild(InnerReference.GetXML(xml.OwnerDocument, "InnerReference", this, processed));
 		}
 	}
+
 	public partial class IfcReinforcedSoil : IfcEarthworksElement
 	{
 		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)

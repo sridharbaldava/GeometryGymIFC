@@ -209,13 +209,13 @@ namespace GeometryGym.Ifc
 			{
 				string name = child.Name;
 				if (string.Compare(name, "Location") == 0)
-					Location = mDatabase.ParseXml<IfcCartesianPoint>(child as XmlElement);
+					mLocation = mDatabase.ParseXml<IfcPoint>(child as XmlElement);
 			}
 		}
 		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
-			xml.AppendChild(Location.GetXML(xml.OwnerDocument, "Location", this, processed));
+			xml.AppendChild(mLocation.GetXML(xml.OwnerDocument, "Location", this, processed));
 		}
 	}
 	public partial class IfcPlanarExtent : IfcGeometricRepresentationItem
@@ -334,6 +334,24 @@ namespace GeometryGym.Ifc
 			xml.AppendChild(element);
 			foreach (IfcCartesianPoint p in Polygon)
 				element.AppendChild(p.GetXML(xml.OwnerDocument, "", this, processed));
+		}
+	}
+	public partial class IfcPolynomialCurve : IfcCurve
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			xml.AppendChild((Position as BaseClassIfc).GetXML(xml.OwnerDocument, "Position", this, processed));
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			foreach (XmlNode child in xml.ChildNodes)
+			{
+				string name = child.Name;
+				if (string.Compare(name, "Position", true) == 0)
+					Position = mDatabase.ParseXml<IfcPlacement>(child as XmlElement);
+			}
 		}
 	}
 	public partial class IfcPostalAddress : IfcAddress

@@ -43,7 +43,7 @@ namespace GeometryGym.Ifc
 			xml.AppendChild(Directrix.GetXML(xml.OwnerDocument, "Directrix", this, processed));
 			XmlElement element = xml.OwnerDocument.CreateElement("CrossSectionPositions", mDatabase.mXmlNamespace);
 			xml.AppendChild(element);
-			foreach (IfcDistanceExpression o in CrossSectionPositions)
+			foreach (IfcPointByDistanceExpression o in CrossSectionPositions)
 				element.AppendChild(o.GetXML(xml.OwnerDocument, "", this, processed));
 			element = xml.OwnerDocument.CreateElement("CrossSections", mDatabase.mXmlNamespace);
 			xml.AppendChild(element);
@@ -66,7 +66,7 @@ namespace GeometryGym.Ifc
 				{
 					foreach (XmlNode cn in child.ChildNodes)
 					{
-						IfcDistanceExpression o = mDatabase.ParseXml<IfcDistanceExpression>(cn as XmlElement);
+						IfcPointByDistanceExpression o = mDatabase.ParseXml<IfcPointByDistanceExpression>(cn as XmlElement);
 						if (o != null)
 							CrossSectionPositions.Add(o);
 					}
@@ -110,6 +110,43 @@ namespace GeometryGym.Ifc
 			xml.AppendChild(element);
 			foreach (IfcReinforcementBarProperties p in CrossSectionReinforcementDefinitions)
 				element.AppendChild(p.GetXML(xml.OwnerDocument, "", this, processed));
+		}
+	}
+	public abstract partial class IfcSegment : IfcGeometricRepresentationItem
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			xml.SetAttribute("Transition", mTransition.ToString().ToLower());
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			XmlAttribute transition = xml.Attributes["Transition"];
+			if (transition != null)
+				Enum.TryParse<IfcTransitionCode>(transition.Value, out mTransition);
+		}
+	}
+	public partial class IfcSegmentedReferenceCurve
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			xml.AppendChild(BaseCurve.GetXML(xml.OwnerDocument, "BaseCurve", this, processed));
+			if (EndPoint != null)
+				xml.AppendChild(EndPoint.GetXML(xml.OwnerDocument, "EndPoint", this, processed));
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			foreach (XmlNode child in xml.ChildNodes)
+			{
+				string name = child.Name;
+				if (string.Compare(name, "BaseCurve", true) == 0)
+					BaseCurve = mDatabase.ParseXml<IfcBoundedCurve>(child as XmlElement);
+				else if (string.Compare(name, "EndPoint", true) == 0)
+					EndPoint = mDatabase.ParseXml<IfcPlacement>(child as XmlElement);
+			}
 		}
 	}
 	public partial class IfcShapeAspect : BaseClassIfc
@@ -168,7 +205,7 @@ namespace GeometryGym.Ifc
 					{
 						IfcShell s = mDatabase.ParseXml<IfcShell>(cn as XmlElement);
 						if (s != null)
-							addBoundary(s);
+							mSbsmBoundary.Add(s);
 					}
 				}
 			}
@@ -178,8 +215,8 @@ namespace GeometryGym.Ifc
 			base.SetXML(xml, host, processed);
 			XmlElement element = xml.OwnerDocument.CreateElement("SbsmBoundary", mDatabase.mXmlNamespace);
 			xml.AppendChild(element);
-			foreach (int i in mSbsmBoundary)
-				element.AppendChild(mDatabase[i].GetXML(xml.OwnerDocument, "", this, processed));
+			foreach (IfcShell shell in mSbsmBoundary)
+				element.AppendChild((shell as BaseClassIfc).GetXML(xml.OwnerDocument, "", this, processed));
 		}
 	}
 	public partial class IfcSign : IfcElementComponent
@@ -288,6 +325,25 @@ namespace GeometryGym.Ifc
 			setAttribute(xml, "Expression", Expression);
 			if (mAccessState != IfcStateEnum.NOTDEFINED)
 				xml.SetAttribute("AccessState", mAccessState.ToString().ToLower());
+		}
+	}
+	public partial class IfcSine
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			xml.SetAttribute("CosineTerm", mSineTerm.ToString());
+			xml.SetAttribute("Constant", mConstant.ToString());
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			string att = xml.GetAttribute("CosineTerm");
+			if (!string.IsNullOrEmpty(att))
+				double.TryParse(att, out mSineTerm);
+			att = xml.GetAttribute("Constant");
+			if (!string.IsNullOrEmpty(att))
+				double.TryParse(att, out mConstant);
 		}
 	}
 	public partial class IfcSite : IfcSpatialStructureElement
@@ -478,6 +534,24 @@ namespace GeometryGym.Ifc
 		{
 			base.SetXML(xml, host, processed);
 			xml.SetAttribute("Radius", mRadius.ToString());
+		}
+	}
+	public partial class IfcSpiral
+	{
+		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
+		{
+			base.SetXML(xml, host, processed);
+			xml.AppendChild((Position as BaseClassIfc).GetXML(xml.OwnerDocument, "Position", this, processed));
+		}
+		internal override void ParseXml(XmlElement xml)
+		{
+			base.ParseXml(xml);
+			foreach (XmlNode child in xml.ChildNodes)
+			{
+				string name = child.Name;
+				if (string.Compare(name, "Position", true) == 0)
+					Position = mDatabase.ParseXml<IfcAxis2Placement>(child as XmlElement);
+			}
 		}
 	}
 	public abstract partial class IfcStructuralAction : IfcStructuralActivity // ABSTRACT SUPERTYPE OF (ONEOF (IfcStructuralCurveAction, IfcStructuralPointAction, IfcStructuralSurfaceAction))
@@ -857,33 +931,13 @@ namespace GeometryGym.Ifc
 				element.AppendChild((style as BaseClassIfc).GetXML(xml.OwnerDocument, "", this, processed));
 		}
 	}
-	public partial class IfcSurfaceStyleRendering : IfcSurfaceStyleShading
-	{
-		//internal double mTransparency;// : OPTIONAL IfcNormalisedRatioMeasure;
-		//internal IfcColourOrFactor mDiffuseColour, mTransmissionColour, mDiffuseTransmissionColour, mReflectionColour, mSpecularColour;//:	OPTIONAL IfcColourOrFactor;
-		//internal IfcSpecularHighlightSelect mSpecularHighlight;// : OPTIONAL 
-		//internal IfcReflectanceMethodEnum mReflectanceMethod = IfcReflectanceMethodEnum.NOTDEFINED;// : IfcReflectanceMethodEnum; 
-
-		internal override void ParseXml(XmlElement xml)
-		{
-			base.ParseXml(xml);
-			if (xml.HasAttribute("Transparency"))
-				mTransparency = double.Parse(xml.Attributes["Transparency"].Value);
-
-		}
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
-		{
-			base.SetXML(xml, host, processed);
-			if (!double.IsNaN(mTransparency))
-				xml.SetAttribute("Transparency", mTransparency.ToString());
-
-		}
-	}
 	public partial class IfcSurfaceStyleShading : IfcPresentationItem, IfcSurfaceStyleElementSelect
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
 			base.ParseXml(xml);
+			if (xml.HasAttribute("Transparency"))
+				mTransparency = double.Parse(xml.Attributes["Transparency"].Value);
 			foreach (XmlNode child in xml.ChildNodes)
 			{
 				string name = child.Name;
@@ -894,6 +948,8 @@ namespace GeometryGym.Ifc
 		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
 			base.SetXML(xml, host, processed);
+			if (!double.IsNaN(mTransparency))
+				xml.SetAttribute("Transparency", mTransparency.ToString());
 			xml.AppendChild(SurfaceColour.GetXML(xml.OwnerDocument, "SurfaceColour", this, processed));
 		}
 	}
