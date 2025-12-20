@@ -37,7 +37,7 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcGasTerminalTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcGasTerminalTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 	public partial class IfcGeneralMaterialProperties
@@ -103,7 +103,7 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcGeographicElementTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcGeographicElementTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 	public partial class IfcGeographicElementType
@@ -114,7 +114,7 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcGeographicElementTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcGeographicElementTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 	public partial class IfcGeometricRepresentationContext
@@ -173,7 +173,7 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcGeoScienceFeatureTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcGeoScienceFeatureTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 	public partial class IfcGeoScienceModel
@@ -187,7 +187,7 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcGeoScienceModelTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcGeoScienceModelTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 	public partial class IfcGeoScienceObservation
@@ -198,7 +198,7 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcGeoScienceObservationTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcGeoScienceObservationTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 	public partial class IfcGeotechnicalStratum
@@ -211,7 +211,7 @@ namespace GeometryGym.Ifc
 			{
 				string s = ParserSTEP.StripField(str, ref pos, len);
 				if (s.StartsWith("."))
-					Enum.TryParse<IfcGeotechnicalStratumTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+					Enum.TryParse<IfcGeotechnicalStratumTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 			}
 		}
 	}
@@ -223,7 +223,7 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcGeotechTypicalSectionTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcGeotechTypicalSectionTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 	public partial class IfcGradientCurve
@@ -262,7 +262,7 @@ namespace GeometryGym.Ifc
 			{
 				string s = ParserSTEP.StripField(str, ref pos, len);
 				if (s[0] == '.')
-					Enum.TryParse<IfcGridTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+					Enum.TryParse<IfcGridTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 			}
 		}
 	}
@@ -298,7 +298,7 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcGroundReinforcementElementTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcGroundReinforcementElementTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 	public partial class IfcGroundReinforcementElementType
@@ -309,7 +309,7 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcGroundReinforcementElementTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcGroundReinforcementElementTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 }

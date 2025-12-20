@@ -39,7 +39,7 @@ namespace GeometryGym.Ifc
 			{
 				string s = ParserSTEP.StripField(str, ref pos, len);
 				if (s.StartsWith("."))
-					Enum.TryParse<IfcWallTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+					Enum.TryParse<IfcWallTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 			}
 		}
 	}
@@ -51,7 +51,7 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcWallTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcWallTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 	public partial class IfcWarpingStiffnessSelect
@@ -67,7 +67,7 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcWasteTerminalTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcWasteTerminalTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 	public partial class IfcWasteTerminalType
@@ -78,7 +78,7 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcWasteTerminalTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcWasteTerminalTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 	public partial class IfcWaterProperties
@@ -127,10 +127,10 @@ namespace GeometryGym.Ifc
 			{
 				string s = ParserSTEP.StripField(str, ref pos, len);
 				if (s.StartsWith("."))
-					Enum.TryParse<IfcWindowTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+					Enum.TryParse<IfcWindowTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 				s = ParserSTEP.StripField(str, ref pos, len);
 				if (s.StartsWith("."))
-					Enum.TryParse<IfcWindowTypePartitioningEnum>(s.Replace(".", ""), true, out mPartitioningType);
+					Enum.TryParse<IfcWindowTypePartitioningEnum>(s.Substring(1, s.Length - 2), true, out mPartitioningType);
 				mUserDefinedPartitioningType = ParserSTEP.Decode(ParserSTEP.StripString(str, ref pos, len));
 			}
 		}
@@ -193,10 +193,10 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcWindowStyleConstructionEnum>(s.Replace(".", ""), true, out mConstructionType);
+				Enum.TryParse<IfcWindowStyleConstructionEnum>(s.Substring(1, s.Length - 2), true, out mConstructionType);
 			s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcWindowStyleOperationEnum>(s.Replace(".", ""), true, out mOperationType);
+				Enum.TryParse<IfcWindowStyleOperationEnum>(s.Substring(1, s.Length - 2), true, out mOperationType);
 			mParameterTakesPrecedence = ParserSTEP.StripBool(str, ref pos, len);
 			mSizeable = ParserSTEP.StripBool(str, ref pos, len);
 		}
@@ -236,7 +236,7 @@ namespace GeometryGym.Ifc
 			mExceptionTimes.AddRange(ParserSTEP.StripListLink(str, ref pos, len).Select(x => dictionary[x] as IfcWorkTime));
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcWorkCalendarTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcWorkCalendarTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 	public abstract partial class IfcWorkControl
@@ -256,7 +256,7 @@ namespace GeometryGym.Ifc
 				mSSFinishTime = dictionary[ ParserSTEP.StripLink(str, ref pos, len)] as IfcDateTimeSelect;
 				string s = ParserSTEP.StripField(str, ref pos, len);
 				if (s.StartsWith("."))
-					Enum.TryParse<IfcWorkControlTypeEnum>(s.Replace(".", ""), true, out mWorkControlType);
+					Enum.TryParse<IfcWorkControlTypeEnum>(s.Substring(1, s.Length - 2), true, out mWorkControlType);
 				mUserDefinedControlType = ParserSTEP.Decode(ParserSTEP.StripString(str, ref pos, len));
 			}
 			else
@@ -297,7 +297,7 @@ namespace GeometryGym.Ifc
 			{
 				string s = ParserSTEP.StripField(str, ref pos, len);
 				if (s.StartsWith("."))
-					Enum.TryParse<IfcWorkPlanTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+					Enum.TryParse<IfcWorkPlanTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 			}
 		}
 	}
@@ -314,7 +314,7 @@ namespace GeometryGym.Ifc
 			{
 				string s = ParserSTEP.StripField(str, ref pos, len);
 				if (s.StartsWith("."))
-					Enum.TryParse<IfcWorkScheduleTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+					Enum.TryParse<IfcWorkScheduleTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 			}
 		}
 	}

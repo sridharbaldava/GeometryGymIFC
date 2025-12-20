@@ -41,6 +41,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using JsonObject = Newtonsoft.Json.Linq.JObject;
 using JsonArray = Newtonsoft.Json.Linq.JArray;
+using System.Web;
 #else
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -126,7 +127,7 @@ namespace GeometryGym.Ifc
 
 		internal ReleaseVersion mRelease = ReleaseVersion.IFC2x3;
 		public FormatIfcSerialization Format { get; set; }
-		public bool WriteFullFilePath { get; set; } = true;
+		public SerializationOptions SerializationOptions { get; set; } = new SerializationOptions();
 		public string SourceFilePath { get; set; } = "";
 		public string Authorization { get; set; } = "None";
 		
@@ -2165,14 +2166,14 @@ namespace GeometryGym.Ifc
 		{
 			mApplicableTypes = new List<ApplicableType>();
             Filter = filter;
-			string[] fields = filter.Split(",;".ToCharArray());
+				string[] fields = filter.Split(",;".ToCharArray());
 			foreach (string str in fields)
 			{
 				if (string.IsNullOrEmpty(str))
 					continue;
 				string[] pair = str.Trim().Split("/.".ToCharArray());
 				string typename = (pair == null ? str.Trim() : pair[0]), predefined = pair == null || pair.Length < 2 ? "" : pair[1];
-				Type type = BaseClassIfc.GetType(typename); 
+				Type type = BaseClassIfc.GetType(typename);
 				if (type == null)
 					continue;
 				mApplicableTypes.Add(new ApplicableType(type, predefined));
@@ -2240,6 +2241,11 @@ namespace GeometryGym.Ifc
 		}
 	}
 
+	public class SerializationOptions
+	{
+		public bool WriteFullFilePath { get; set; } = true;
+		public bool WriteHeaderComments { get; set; } = true;
+	}
 	internal class SerializationIfc
 	{
 		protected DatabaseIfc mDatabase = null;
@@ -2260,7 +2266,6 @@ namespace GeometryGym.Ifc
 				mFormat = format;
 				mTextReader = sr;
 			}
-
 			void IDisposable.Dispose()
 			{
 				if (mTextReader != null)
@@ -2287,24 +2292,39 @@ namespace GeometryGym.Ifc
 #if (!NOIFCZIP)
 			if (ExtensionHelper.ExtensionEquals(fileName, ".zip") || ExtensionHelper.ExtensionEquals(fileName, ".ifczip"))
 			{
+				Debug.WriteLine(DateTime.Now.ToString("HH:mm:ss:ffff") + " - Started opening zip " + fileName);
 				ZipArchive za = ZipFile.OpenRead(fileName);
-				if (za.Entries.Count != 1)
+				Debug.WriteLine(DateTime.Now.ToString("HH:mm:ss:ffff") + " - Finished opening zip " + fileName);
+				foreach (var entry in za.Entries)
 				{
-					return null;
+					string filename = entry.Name.ToLower();
+					if (ExtensionHelper.ExtensionEquals(filename, ".ifc"))
+					{
+						Encoding encoding = SerializationIfcSTEP.StepFileEncoding();
+						Debug.WriteLine(DateTime.Now.ToString("HH:mm:ss:ffff") + " - Started opening zip entry " + fileName);
+						streamReader = new StreamReader(entry.Open(), encoding);
+						Debug.WriteLine(DateTime.Now.ToString("HH:mm:ss:ffff") + " - Finished opening zip entry " + fileName);
+						return new FileStreamIfc(FormatIfcSerialization.STEP, streamReader);
+					}
+					else if (ExtensionHelper.ExtensionEquals(filename, ".xml") ||
+						ExtensionHelper.ExtensionEquals(filename, ".ifcxml"))
+					{
+						streamReader = new StreamReader(entry.Open());
+						return new FileStreamIfc(FormatIfcSerialization.XML, streamReader);
+					}
+#if (!NOIFCJSON)
+					else if (ExtensionHelper.ExtensionEquals(filename, ".json") ||
+						ExtensionHelper.ExtensionEquals(filename, ".ifcjson"))
+					{
+						streamReader = new StreamReader(entry.Open());
+						return new FileStreamIfc(FormatIfcSerialization.JSON, streamReader);
+					}
+#endif
 				}
-				string filename = za.Entries[0].Name.ToLower();
-				FormatIfcSerialization fformat = detectFormat(filename);
-				if (fformat == FormatIfcSerialization.STEP)
-				{
-					Encoding encoding = SerializationIfcSTEP.StepFileEncoding();
-					streamReader = new StreamReader(za.Entries[0].Open(), encoding);
-				}
-				else
-					streamReader = new StreamReader(za.Entries[0].Open());
-				return new FileStreamIfc(fformat, streamReader);
+				return null;
 			}
 #endif
-			FormatIfcSerialization format = detectFormat(fileName);
+					FormatIfcSerialization format = detectFormat(fileName);
 			if (format == FormatIfcSerialization.STEP)
 			{
 				Encoding encoding = SerializationIfcSTEP.StepFileEncoding();
@@ -2673,7 +2693,7 @@ namespace GeometryGym.Ifc
 					BaseClassIfc o = obj.Object;
 					if (o is IfcPropertySet || o is IfcMaterialConstituentSet || o is IfcPropertySetTemplate || o is IfcStructuralAnalysisModel)
 						secondPass.Add(obj);
-					else if (o is IfcTriangulatedFaceSet || o is IfcPolyLoop || o is IfcFacetedBrep)
+					else if (o is IfcTriangulatedFaceSet || o is IfcPolyLoop || o is IfcFacetedBrep || o is IfcFace)
 						threadSafeConstructors.Add(obj);
 					else
 						firstPass.Add(obj);
@@ -2770,13 +2790,19 @@ namespace GeometryGym.Ifc
 						obj.mStepId = stepID;
 						mDictionary[stepID] = obj;
 						ConstructorClass constructorClass = new ConstructorClass(obj, def);
-						if(obj is IfcTessellatedFaceSet || obj is IfcRelationship)
+						if (obj is IfcTessellatedFaceSet || obj is IfcRelationship)
+						{
 							mConstructorsBag.Add(constructorClass);
+						}
 						else if (obj is IfcCartesianPoint || obj is IfcCartesianPointList || obj is IfcDirection ||
-							obj is IfcIndexedPolygonalFace  || def.IndexOf('#') < 0)
+							obj is IfcIndexedPolygonalFace || (def.Length < 150 && def.IndexOf('#') < 0))
+						{
 							mPrimitiveConstructors.Add(constructorClass);
+						}
 						else
+						{
 							mConstructorsBag.Add(constructorClass);
+						}
 
 						int pos = 0;
 						if(obj is IfcRoot root)
@@ -3018,16 +3044,20 @@ namespace GeometryGym.Ifc
 			else if (mDatabase.ModelView == ModelView.IFC4X3AlignmentBasedView)
 				modelView = "Alignment-basedView";
 			lines.Add("ISO-10303-21;\r\nHEADER;\r\nFILE_DESCRIPTION(('ViewDefinition [" + modelView + "]'),'2;1');");
+
 			
-			lines.Add("FILE_NAME(");
 			string strFileName = fileName;
-			if(!mDatabase.WriteFullFilePath)
+			bool writeFullFilePath = true, writeHeaderComments = true;
+			if (mDatabase.SerializationOptions != null)
+			{
+				writeFullFilePath = mDatabase.SerializationOptions.WriteFullFilePath;
+				writeHeaderComments = mDatabase.SerializationOptions.WriteHeaderComments;
+			}
+			if (!writeFullFilePath)
 			{
 				strFileName = System.IO.Path.GetFileName(fileName);
 			}
-			lines.Add("/* name */ '" + ParserSTEP.Encode(strFileName) + "',");
 			DateTime now = DateTime.Now;
-			lines.Add("/* time_stamp */ '" + now.Year + "-" + (now.Month < 10 ? "0" : "") + now.Month + "-" + (now.Day < 10 ? "0" : "") + now.Day + "T" + (now.Hour < 10 ? "0" : "") + now.Hour + ":" + (now.Minute < 10 ? "0" : "") + now.Minute + ":" + (now.Second < 10 ? "0" : "") + now.Second + "',");
 			string authorName = "", organizationName = "", authorization = "None", originatingSystem = "", preprocessorVersion = "";
 			var fileInformation = mDatabase.OriginatingFileInformation;
 			if (fileInformation != null)
@@ -3045,36 +3075,61 @@ namespace GeometryGym.Ifc
 				IfcPerson person = mDatabase.Factory.mPerson;
 				authorName = person == null ? mDatabase.Factory.PersonIdentification() : person.Name;
 			}
-			if(string.IsNullOrEmpty(organizationName))
+			if (string.IsNullOrEmpty(organizationName))
 			{
 				organizationName = IfcOrganization.Organization;
 				IfcOrganization organization = mDatabase.Factory.mOrganization;
 				if (organization != null)
-					organizationName = organization.Name; 
+					organizationName = organization.Name;
 			}
-			if(string.IsNullOrEmpty(originatingSystem))
+			if (string.IsNullOrEmpty(originatingSystem))
 			{
 				originatingSystem = mDatabase.Factory.ApplicationFullName;
 			}
-			if(string.IsNullOrEmpty(preprocessorVersion))
+			if (string.IsNullOrEmpty(preprocessorVersion))
 			{
 				preprocessorVersion = mDatabase.Factory.ApplicationVersion;
 			}
-			lines.Add("/* author */ ('" + ParserSTEP.Encode(authorName) + "'),");
-			lines.Add("/* organization */ ('" + ParserSTEP.Encode(organizationName) + "'),");
-			lines.Add("/* preprocessor_version */ '" + ParserSTEP.Encode(preprocessorVersion) + "',");
-			lines.Add("/* originating_system */ '" + ParserSTEP.Encode(originatingSystem) + "',");
-
-			lines.Add("/* authorization */ '" + ParserSTEP.Encode(authorization) + "'");
-			if(mDatabase.Comments.Count > 0)
+			if (writeHeaderComments)
 			{
-				foreach (string comment in mDatabase.Comments)
+				lines.Add("FILE_NAME(");
+				lines.Add("/* name */ '" + ParserSTEP.Encode(strFileName) + "',");
+				lines.Add("/* time_stamp */ '" + now.Year + "-" + (now.Month < 10 ? "0" : "") + now.Month + "-" + (now.Day < 10 ? "0" : "") + now.Day + "T" + (now.Hour < 10 ? "0" : "") + now.Hour + ":" + (now.Minute < 10 ? "0" : "") + now.Minute + ":" + (now.Second < 10 ? "0" : "") + now.Second + "',");
+				lines.Add("/* author */ ('" + ParserSTEP.Encode(authorName) + "'),");
+				lines.Add("/* organization */ ('" + ParserSTEP.Encode(organizationName) + "'),");
+				lines.Add("/* preprocessor_version */ '" + ParserSTEP.Encode(preprocessorVersion) + "',");
+				lines.Add("/* originating_system */ '" + ParserSTEP.Encode(originatingSystem) + "',");
+
+				lines.Add("/* authorization */ '" + ParserSTEP.Encode(authorization) + "'");
+				if (mDatabase.Comments.Count > 0)
 				{
-					if(!string.IsNullOrEmpty(comment))
-						lines.Add("/* " + ParserSTEP.Encode(comment) + "*/");
+					foreach (string comment in mDatabase.Comments)
+					{
+						if (!string.IsNullOrEmpty(comment))
+							lines.Add("/* " + ParserSTEP.Encode(comment) + "*/");
+					}
+				}
+				lines.Add(");");
+			}
+			else
+			{
+				string fileLine = "FILE_NAME('" + ParserSTEP.Encode(strFileName) + "','" +
+					now.Year + "-" + (now.Month < 10 ? "0" : "") + now.Month + "-" + (now.Day < 10 ? "0" : "") +
+					now.Day + "T" + (now.Hour < 10 ? "0" : "") + now.Hour + ":" + (now.Minute < 10 ? "0" : "") +
+					now.Minute + ":" + (now.Second < 10 ? "0" : "") + now.Second + "',('" +
+					ParserSTEP.Encode(authorName) + "'),('" + ParserSTEP.Encode(organizationName) + "'),'" +
+					ParserSTEP.Encode(preprocessorVersion) + "','" + ParserSTEP.Encode(originatingSystem) + "','" +
+					ParserSTEP.Encode(authorization) + "');";
+				lines.Add(fileLine);
+				if (mDatabase.Comments.Count > 0)
+				{
+					foreach (string comment in mDatabase.Comments)
+					{
+						if (!string.IsNullOrEmpty(comment))
+							lines.Add("/* " + ParserSTEP.Encode(comment) + "*/");
+					}
 				}
 			}
-			lines.Add(");");
 			lines.Add("");
 			ReleaseVersion release = mDatabase.Release;
 			string version = release.ToString().ToUpper();

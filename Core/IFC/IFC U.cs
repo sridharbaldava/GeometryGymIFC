@@ -166,7 +166,7 @@ namespace GeometryGym.Ifc
 			if (this[IfcDerivedUnitEnum.LINEARFORCEUNIT] == null)
 				Units.Add(new IfcDerivedUnit(new IfcDerivedUnitElement(fu, 1), new IfcDerivedUnitElement(lengthSI, -1), IfcDerivedUnitEnum.LINEARFORCEUNIT));
 			if (this[IfcDerivedUnitEnum.LINEARMOMENTUNIT] == null)
-				Units.Add(new IfcDerivedUnit(new IfcDerivedUnitElement(fu, 1), IfcDerivedUnitEnum.LINEARMOMENTUNIT));
+				Units.Add(new IfcDerivedUnit(new IfcDerivedUnitElement(fu, 1), new IfcDerivedUnitElement(lengthSI, 1), new IfcDerivedUnitElement(lengthSI, 1), IfcDerivedUnitEnum.LINEARMOMENTUNIT));
 			if (this[IfcDerivedUnitEnum.PLANARFORCEUNIT] == null)
 				Units.Add(new IfcDerivedUnit(new IfcDerivedUnitElement(fu, 1), new IfcDerivedUnitElement(lengthSI, -2), IfcDerivedUnitEnum.PLANARFORCEUNIT));
 			if (this[IfcDerivedUnitEnum.MODULUSOFELASTICITYUNIT] == null)

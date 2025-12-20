@@ -289,7 +289,12 @@ namespace GeometryGym.Ifc
 			header["FILE_DESCRIPTION"] = fileDescription;
 			JsonObject jsonObject = new JsonObject();
 			string strFileName = fileName;
-			if(!WriteFullFilePath)
+			bool writeFullFilePath = true;
+			if (SerializationOptions != null)
+			{
+				writeFullFilePath = SerializationOptions.WriteFullFilePath;
+			}
+			if(!writeFullFilePath)
 				strFileName = System.IO.Path.GetFileName(fileName);
 
 			jsonObject["name"] = strFileName;

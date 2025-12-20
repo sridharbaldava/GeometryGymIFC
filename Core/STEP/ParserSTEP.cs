@@ -234,7 +234,7 @@ namespace GeometryGym.STEP
 		public static bool ParseBool(string str)
 		{
 			string s = str.Trim();
-			if (char.ToUpper(s.Replace(".", "")[0]) == 'T')
+			if (char.ToUpper(s.Substring(1, s.Length - 2)[0]) == 'T')
 				return true;
 			return false;
 		}

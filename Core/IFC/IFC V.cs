@@ -553,7 +553,20 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public class IfcContextDependentMeasure : IfcMeasureValue { public IfcContextDependentMeasure(double value) : base(value) { } }
 	[Serializable]
-	public class IfcCountMeasure : IfcMeasureValue { public IfcCountMeasure(double value) : base(value) { } }
+	public class IfcCountMeasure : IfcMeasureValue 
+	{
+		private int mCountMeasure = int.MinValue;
+		public IfcCountMeasure(double value) : base(value) { }
+		public IfcCountMeasure(int value) : base(value) { mCountMeasure = value; }
+		public new int Measure { get { return mCountMeasure; } set { mCountMeasure = value; mValue = value; } }
+		public double NumericMeasure { get { return mValue; } set { mCountMeasure = int.MinValue; mValue = value; } }
+		public override string ToString() 
+		{
+			if(mCountMeasure != int.MinValue)
+				return this.GetType().Name + "((" + mCountMeasure + "))";
+			return base.ToString();
+		}
+	}
 	[Serializable]
 	public class IfcDescriptiveMeasure : IfcMeasureValue, IfcSizeSelect 
 	{

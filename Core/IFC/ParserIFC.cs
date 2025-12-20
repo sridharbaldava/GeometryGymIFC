@@ -55,7 +55,7 @@ namespace GeometryGym.Ifc
 			string s = str.Trim();
 			if (str == "$")
 				return IfcLogicalEnum.UNKNOWN;
-			Char c = char.ToUpper(s.Replace(".", "")[0]);
+			Char c = char.ToUpper(s.Substring(1, s.Length - 2)[0]);
 			if (c == 'T')
 				return IfcLogicalEnum.TRUE;
 			else if (c == 'F')
