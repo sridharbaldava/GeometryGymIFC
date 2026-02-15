@@ -381,7 +381,6 @@ namespace GeometryGym.Ifc
 		public IfcFillElementType(DatabaseIfc db, string name, IfcFillElementTypeEnum type) : base(db) { Name = name; PredefinedType = type; }
 	}
 	public interface IfcFillStyleSelect : IBaseClassIfc { } // SELECT ( IfcFillAreaStyleHatching, IfcFillAreaStyleTiles, IfcExternallyDefinedHatchStyle, IfcColour);
-	[Obsolete("DEPRECATED IFC4", false)]
 	[Serializable]
 	public partial class IfcFilter : IfcFlowTreatmentDevice //IFC4  
 	{

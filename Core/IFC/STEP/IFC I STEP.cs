@@ -42,7 +42,7 @@ namespace GeometryGym.Ifc
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
-			return base.BuildStringSTEP(release) + ",." + mPredefinedType.ToString() + ".";
+			return base.BuildStringSTEP(release) + (mPredefinedType == IfcImprovedGroundTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + ".");
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
@@ -208,7 +208,7 @@ namespace GeometryGym.Ifc
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
-			return base.BuildStringSTEP(release) + ",." + mPredefinedType.ToString() + ".,#" + mJurisdiction.StepId + ",(" + 
+			return base.BuildStringSTEP(release) + (mPredefinedType == IfcInventoryTypeEnum.NOTDEFINED ? ",$,#" : ",." + mPredefinedType.ToString() + ".,#") + mJurisdiction.StepId + ",(" + 
 				string.Join(",", mResponsiblePersons.Select(x=>"#" + x.StepId)) +
 				(release < ReleaseVersion.IFC4 ? "),#" + mLastUpdateDate : ")," + IfcDate.STEPAttribute(mLastUpdateDate)) +
 				(mCurrentValue == null ? ",$" : ",#" + mCurrentValue.StepId) + (mOriginalValue == null ? ",$" : ",#" + mOriginalValue.StepId);

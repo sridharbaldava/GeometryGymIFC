@@ -52,7 +52,7 @@ namespace GeometryGym.Ifc
 		protected override string BuildStringSTEP(ReleaseVersion release) 
 		{ 
 			return "." + (release < ReleaseVersion.IFC4 && mRole == IfcRoleEnum.COMMISSIONINGENGINEER ? "COMISSIONINGENGINEER" : mRole.ToString()) +
-				(string.IsNullOrEmpty( mUserDefinedRole) ? ".,$," : ".,'" + ParserSTEP.Encode(mUserDefinedRole) + "',") + (string.IsNullOrEmpty(mDescription) ? "$" : "'" + ParserSTEP.Encode(mDescription) + "'"); }
+				(string.IsNullOrEmpty(mUserDefinedRole) ? ".,$," : ".,'" + ParserSTEP.Encode(mUserDefinedRole) + "',") + (string.IsNullOrEmpty(mDescription) ? "$" : "'" + ParserSTEP.Encode(mDescription) + "'"); }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			string s = ParserSTEP.StripField(str, ref pos, len);
