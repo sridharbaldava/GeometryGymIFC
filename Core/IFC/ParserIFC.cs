@@ -20,6 +20,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections;
+using System.Globalization;
 using System.Text;
 using System.Reflection;
 using System.IO;
@@ -34,134 +35,6 @@ namespace GeometryGym.Ifc
 {
 	public static class ParserIfc 
 	{
-		public static string Encode(string str)
-		{
-			if (string.IsNullOrEmpty(str))
-				return "";
-			string result = "";
-			int length = str.Length;
-			for (int icounter = 0; icounter < length; icounter++)
-			{
-				char c = str[icounter];
-				if (c == '\r')
-				{
-					if(icounter + 1 < length)
-					{
-						if (str[icounter + 1] == '\n' && icounter + 2 == length)
-							return result;
-					}
-					continue;
-				}
-				if(c == '\n')
-				{
-					if (icounter + 1 == length)
-						return result;
-				}
-				if (c == '\'')
-					result += "\\X\\27"; // Alternative result += "''";
-				else if (c == '\\')
-					result += "\\\\";
-				else
-				{
-					int i = (int)c;
-					if (i < 32 || i > 126)
-						result += "\\X2\\" + string.Format("{0:x4}", i).ToUpper() + "\\X0\\";
-					else
-						result += c;
-				}
-			}
-			return result;
-		}
-		public static string Decode(string str) //http://www.buildingsmart-tech.org/implementation/get-started/string-encoding/string-encoding-decoding-summary
-		{
-			if (string.IsNullOrEmpty(str) || str == "$")
-				return "";
-			int ilast = str.Length - 4, icounter = 0, strLength = str.Length;
-			string result = "";
-			while (icounter < ilast)
-			{
-				char c = str[icounter];
-				if(c == '\'')
-				{
-					if (icounter + 1 < ilast && str[icounter+1] == '\'')
-						icounter++;
-				}
-				if (c == '\\')
-				{
-					if (icounter + 1 < strLength && str[icounter + 1] == '\\')
-					{
-						result += c;
-						icounter++;
-					}
-					else if (icounter + 3 < strLength)
-					{
-						char c3 = str[icounter + 3], c2 = str[icounter + 2], c1 = str[icounter + 1];
-						if (c2 == '\\')
-						{
-							if (c1 == 'S')
-							{
-								result += (char)((int)c3 + 128);
-								icounter += 3;
-							}
-							else if (c1 == 'X' && strLength > icounter + 4)
-							{
-								string s = str.Substring(icounter + 3, 2);
-								Int32 i = Convert.ToInt32(s, 16);
-								Byte[] bytes = BitConverter.GetBytes(i);
-								c = Encoding.Unicode.GetChars(bytes)[0];
-								result += c;
-								icounter += 4;
-							}
-							else
-								result += str[icounter];
-						}
-						else if (c3 == '\\' && c2 == '2' && c1 == 'X')
-						{
-							icounter += 4;
-							while (str[icounter] != '\\')
-							{
-								string s = str.Substring(icounter, 4);
-								Int32 i = Convert.ToInt32(s, 16);
-								Byte[] bytes = BitConverter.GetBytes(i);
-								c = Encoding.Unicode.GetChars(bytes)[0];
-								result += c;
-								icounter += 4;
-							}
-							icounter += 3;
-						}
-						else if (c1 == '\\' && c2 == 'X')
-						{
-							if (c3 == '2')
-							{
-								icounter += 6;
-								while (str[icounter] != '\\')
-								{
-									string s = str.Substring(icounter, 4);
-									c = System.Text.Encoding.Unicode.GetChars(BitConverter.GetBytes(Convert.ToInt32(s, 16)))[0];
-									//result += (char)();
-									result += c;
-									icounter += 4;
-								}
-								icounter += 5;
-							}
-							else
-								result += str[icounter];
-						}
-						else
-							result += str[icounter];
-					}
-					else
-						result += str[icounter];
-				}
-				else
-					result += str[icounter];
-				icounter++;
-			}
-			while (icounter < str.Length)
-				result += str[icounter++];
-			return result;	
-		}
-
 		public static T ParseEnum<T>(string str, string enumName) where T : struct
 		{
 			int start = enumName.Length + 2, end = str.Length - start - 2;
@@ -182,7 +55,7 @@ namespace GeometryGym.Ifc
 			string s = str.Trim();
 			if (str == "$")
 				return IfcLogicalEnum.UNKNOWN;
-			Char c = char.ToUpper(s.Replace(".", "")[0]);
+			Char c = char.ToUpper(s.Substring(1, s.Length - 2)[0]);
 			if (c == 'T')
 				return IfcLogicalEnum.TRUE;
 			else if (c == 'F')
@@ -250,7 +123,7 @@ namespace GeometryGym.Ifc
 			BaseClassIfc result = BaseClassIfc.LineParser(kw, str, schema, dict);
 			if (result == null)
 				return null;
-			result.mIndex = stepID;
+			result.mStepId = stepID;
 			return result;
 		}
 
@@ -317,19 +190,21 @@ namespace GeometryGym.Ifc
 			return "$";
 		}
 		private static Dictionary<string, Type> mDerivedMeasureValueTypes = null;
+		private static object mDerivedMeasureValueTypesLock = new object();
 		private static Dictionary<string, Type> DerivedMeasureValueTypes
 		{
 			get
 			{
-				if (mDerivedMeasureValueTypes == null)
-				{
-					mDerivedMeasureValueTypes = new Dictionary<string, Type>();
-					IEnumerable<Type> types = from type in Assembly.GetCallingAssembly().GetTypes()
-											  where typeof(IfcDerivedMeasureValue).IsAssignableFrom(type)
-											  select type;
-					foreach (Type t in types)
-						mDerivedMeasureValueTypes[t.Name.ToLower()] = t;
-				}
+				lock (mDerivedMeasureValueTypesLock)
+					if (mDerivedMeasureValueTypes == null)
+					{
+						mDerivedMeasureValueTypes = new Dictionary<string, Type>();
+						IEnumerable<Type> types = from type in Assembly.GetCallingAssembly().GetTypes()
+												  where typeof(IfcDerivedMeasureValue).IsAssignableFrom(type)
+												  select type;
+						foreach (Type t in types)
+							mDerivedMeasureValueTypes[t.Name.ToLower()] = t;
+					}
 				return mDerivedMeasureValueTypes;
 			}
 		}
@@ -454,15 +329,15 @@ namespace GeometryGym.Ifc
 			if (str.StartsWith("IFCBOOLEAN("))
 				return new IfcBoolean(string.Compare(str.Substring(11, str.Length - 12), ".T.") == 0);
 			if (str.StartsWith("IFCIDENTIFIER("))
-				return new IfcIdentifier(ParserIfc.Decode(str.Substring(15, str.Length - 17)));
+				return new IfcIdentifier(ParserSTEP.Decode(str.Substring(15, str.Length - 17)));
 			if (str.StartsWith("IFCINTEGER("))
-				return new IfcInteger(int.Parse(str.Substring(11, str.Length - 12)));
+				return new IfcInteger(long.Parse(str.Substring(11, str.Length - 12)));
 			if (str.StartsWith("IFCLABEL("))
 			{
 				if (str.Length <= 12)
 					return new IfcLabel("");
 				string s = str.Substring(10, str.Length - 12);
-				return new IfcLabel((str[10] == '$' || s == null ? "" : ParserIfc.Decode(s)));
+				return new IfcLabel((str[10] == '$' || s == null ? "" : ParserSTEP.Decode(s)));
 			}
 			if (str.StartsWith("IFCLOGICAL("))
 			{
@@ -479,12 +354,26 @@ namespace GeometryGym.Ifc
 			if (str.StartsWith("IFCTEXT("))
 			{
 				string s = str.Substring(9, str.Length - 11);
-				return new IfcText((str[9] == '$' || s == null ? "" : ParserIfc.Decode(s)));
+				return new IfcText((str[9] == '$' || s == null ? "" : ParserSTEP.Decode(s)));
 			}
 			if (str.StartsWith("IFCURIREFERENCE("))
+				return new IfcURIReference(str[16] == '$' ? "" : ParserSTEP.Decode(str.Substring(17, str.Length - 19)));
+			if(str.StartsWith("IFCDATE("))
 			{
-				return new IfcURIReference(str[16] == '$' ? "" : ParserIfc.Decode(str.Substring(17, str.Length - 19)));
+				string valueString = str.Substring(9, str.Length - 11);
+				if (DateTime.TryParse(valueString, out DateTime dateTime))
+					return new IfcDate(dateTime);
+				return new IfcLabel(valueString);
 			}
+			if(str.StartsWith("IFCDATETIME("))
+			{
+				string valueString = str.Substring(13, str.Length - 15);
+				if (DateTime.TryParse(valueString, out DateTime dateTime))
+					return new IfcDateTime(dateTime);
+				return new IfcLabel(valueString);
+			}
+			if(str.StartsWith("IFCDURATION("))
+				return IfcDuration.Convert(str.Substring(13, str.Length - 15));
 			int i = 0;
 			if (int.TryParse(str, out i))
 				return new IfcInteger(i);
@@ -512,7 +401,7 @@ namespace GeometryGym.Ifc
 						return new IfcBoolean(result);
 					return new IfcBoolean( value.Contains("T"));
 				}
-				if (string.Compare(name, "IFCDATEE") == 0)
+				if (string.Compare(name, "IFCDATE") == 0)
 					return new IfcDate(DateTime.Parse(value));
 				if (string.Compare(name, "IFCDATETIME") == 0)
 					return new IfcDateTime(DateTime.Parse(value));
@@ -540,19 +429,22 @@ namespace GeometryGym.Ifc
 		}
 		internal static IfcValue parseValue(string str)
 		{
+			if (string.IsNullOrEmpty(str) || string.Compare(str, "$", true) == 0)
+				return null;
+			IfcSimpleValue sv = parseSimpleValue(str);
+			if (sv != null)
+				return sv;
 			IfcMeasureValue mv = parseMeasureValue(str);
 			if (mv != null)
 				return mv;
-			IfcSimpleValue sv = parseSimpleValue(str);
-			if (sv != null)
-				return sv; 
+			
 			return parseDerivedMeasureValue(str);
 		}
 		internal static IfcValue extractValue(string keyword, string value)
 		{
             if (string.IsNullOrEmpty(value))
                 return null;
-			Type type = Type.GetType("GeometryGym.Ifc." + keyword, false, true);
+			Type type = BaseClassIfc.GetType(keyword);
 			if (type != null)
 			{
 			    if(type.IsSubclassOf(typeof(IfcSimpleValue)))	
@@ -622,6 +514,63 @@ namespace GeometryGym.Ifc
 			return false;
 		}
 
+		public static string FormatLength(double length, DatabaseIfc db)
+		{
+			if (double.IsNaN(length))
+				return "$";
+			double tol = (db == null ? 1e-6 : db.Tolerance / 100);
+			int digits = (db == null ? 5 : db.mLengthDigits);
+			double result = Math.Round(length, digits);
+			return ParserSTEP.DoubleToString(Math.Abs(result) < tol ? 0 : result);
+		}
+		public static string IdentifyIfcClass(string className, out string predefinedConstant)
+		{
+			predefinedConstant = "";
+			if (string.IsNullOrEmpty(className))
+				return "";
+			int indexOf = className.IndexOf('.');
+			int	index = className.IndexOf('\\');
+			if (indexOf < 0)
+				indexOf = index;
+			else if (index > 0)
+				indexOf = Math.Min(indexOf, index);
+			index = className.IndexOf('/');
+			if (indexOf < 0)
+				indexOf = index;
+			else if (index > 0)
+				indexOf = Math.Min(indexOf, index);
+			index = className.IndexOf(":");
+			if (indexOf < 0)
+				indexOf = index;
+			else if (index > 0)
+				indexOf = Math.Min(indexOf, index);
+
+			string result = className;
+			if (indexOf > 0)
+			{
+				result = className.Substring(0, indexOf).Trim();
+				string remainder = predefinedConstant = className.Substring(indexOf + 1);
+				indexOf = remainder.IndexOf('(');
+				if (indexOf > 0)
+				{
+					int startIndex = remainder.IndexOf('.'), endIndex = remainder.IndexOf(')');
+					if (startIndex < indexOf)
+						startIndex = indexOf;
+					else
+						endIndex = remainder.IndexOf('.', startIndex + 1);
+
+					predefinedConstant = remainder.Substring(startIndex + 1, endIndex - startIndex - 1).Trim();
+				}
+			}
+
+			if (result.EndsWith("Type"))
+				result = result.Substring(0, result.Length - 4);
+			else if (result.EndsWith("TypeEnum"))
+				result = result.Substring(0, result.Length - 8);
+
+			return result;
+		}
+
 
 		//http://madskristensen.net/post/A-shorter-and-URL-friendly-GUID.aspx
 		/// <summary>
@@ -632,7 +581,7 @@ namespace GeometryGym.Ifc
 		/// http://www.iai-tech.org/ifc/IFC2x3/TC1/html/index.htm
 		/// </summary>
 		/// 
-		 
+
 		#region Private Members
 		/// <summary>
 		/// The replacement table
@@ -788,6 +737,5 @@ namespace GeometryGym.Ifc
 			Guid guid = new Guid(hash);
 			return EncodeGuid(guid);
 		}
-	 
 	}
 }

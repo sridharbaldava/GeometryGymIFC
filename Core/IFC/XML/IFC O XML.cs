@@ -18,18 +18,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Reflection;
-using System.IO;
-using System.ComponentModel;
 using System.Linq;
 using System.Xml;
-//using System.Xml.Linq;
-
 
 namespace GeometryGym.Ifc
 {
-	public abstract partial class IfcObject : IfcObjectDefinition //ABSTRACT SUPERTYPE OF (ONEOF (IfcActor ,IfcControl ,IfcGroup ,IfcProcess ,IfcProduct ,IfcProject ,IfcResource))
+	public partial class IfcObject
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -52,7 +46,7 @@ namespace GeometryGym.Ifc
 				xml.AppendChild(mIsTypedBy.GetXML(xml.OwnerDocument, "IsTypedBy", this, processed));
 		}
 	}
-	public abstract partial class IfcObjectDefinition : IfcRoot, IfcDefinitionSelect  //ABSTRACT SUPERTYPE OF (ONEOF ((IfcContext, IfcObject, IfcTypeObject))))
+	public partial class IfcObjectDefinition
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -115,7 +109,7 @@ namespace GeometryGym.Ifc
 				XmlElement element = xml.OwnerDocument.CreateElement("HasAssignments", mDatabase.mXmlNamespace);
 				foreach (IfcRelAssigns rap in mHasAssignments)
 				{
-					if (rap.mIndex != host.mIndex)
+					if (rap != host)
 						element.AppendChild(rap.GetXML(xml.OwnerDocument, "", this, processed));
 				}
 				if (element.HasChildNodes)
@@ -151,7 +145,7 @@ namespace GeometryGym.Ifc
 			//}
 		}
 	}
-	public partial class IfcObjective : IfcConstraint
+	public partial class IfcObjective
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -166,10 +160,9 @@ namespace GeometryGym.Ifc
 					{
 						IfcConstraint constraint = mDatabase.ParseXml<IfcConstraint>(cn as XmlElement);
 						if (constraint != null)
-							AddBenchmark(constraint);
+							mBenchmarkValues.Add(constraint);
 					}
 				}
-
 			}
 			if (xml.HasAttribute("LogicalAggregator"))
 				Enum.TryParse<IfcLogicalOperatorEnum>(xml.Attributes["LogicalAggregator"].Value, true, out mLogicalAggregator);
@@ -196,7 +189,7 @@ namespace GeometryGym.Ifc
 
 		}
 	}
-	public abstract partial class IfcObjectPlacement : BaseClassIfc  //	 ABSTRACT SUPERTYPE OF (ONEOF (IfcGridPlacement ,IfcLocalPlacement));
+	public partial class IfcObjectPlacement
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -215,7 +208,7 @@ namespace GeometryGym.Ifc
 				xml.AppendChild(mPlacementRelTo.GetXML(xml.OwnerDocument, "PlacementRelTo", this, processed));
 		}
 	}
-	public partial class IfcOpenCrossProfileDef : IfcProfileDef
+	public partial class IfcOpenCrossProfileDef
 	{
 		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		{
@@ -247,7 +240,7 @@ namespace GeometryGym.Ifc
 			}
 		}
 	}
-	public partial class IfcOpeningElement : IfcFeatureElementSubtraction //SUPERTYPE OF(IfcOpeningStandardCase)
+	public partial class IfcOpeningElement
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -278,7 +271,7 @@ namespace GeometryGym.Ifc
 				XmlElement element = xml.OwnerDocument.CreateElement("HasFillings", mDatabase.mXmlNamespace);
 				foreach (IfcRelFillsElement fills in mHasFillings)
 				{
-					if (fills.mIndex != host.mIndex)
+					if (fills != host)
 						element.AppendChild(fills.GetXML(xml.OwnerDocument, "", this, processed));
 				}
 				if (element.HasChildNodes)
@@ -286,7 +279,7 @@ namespace GeometryGym.Ifc
 			}
 		}
 	}
-	public partial class IfcOrganization : BaseClassIfc, IfcActorSelect, IfcResourceObjectSelect
+	public partial class IfcOrganization
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -350,7 +343,7 @@ namespace GeometryGym.Ifc
 			}
 		}
 	}
-	public partial class IfcOrganizationRelationship : IfcResourceLevelRelationship //IFC4
+	public partial class IfcOrganizationRelationship
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -381,7 +374,7 @@ namespace GeometryGym.Ifc
 				element.AppendChild(o.GetXML(xml.OwnerDocument, "", this, processed));
 		}
 	}
-	public partial class IfcOwnerHistory : BaseClassIfc
+	public partial class IfcOwnerHistory
 	{
 		internal override void ParseXml(XmlElement xml)
 		{

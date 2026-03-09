@@ -36,13 +36,72 @@ namespace GeometryGym.Ifc
 		{
 			return BuildStringSTEP(mDatabase == null ? ReleaseVersion.IFC4A2 : mDatabase.Release);
 		}
-		protected virtual string BuildStringSTEP(ReleaseVersion release) { return ""; }
+		protected abstract string BuildStringSTEP(ReleaseVersion release);
 
 		protected string StepOptionalLengthString(double length)
 		{
 			if (double.IsNaN(length) || double.IsInfinity(length))
 				return "$";
 			return formatLength(length);
+		}
+
+		public string StringSTEP(ReleaseVersion release)
+		{
+			string str = BuildStringSTEP(release);
+			if (string.IsNullOrEmpty(str))
+				return "";
+			return StepLinePrefix() + str + StepLineSuffix();
+		}
+
+		internal virtual void WriteStepLine(TextWriter textWriter, ReleaseVersion release)
+		{
+			try
+			{
+				string str = StringSTEP(release);
+				if (!string.IsNullOrEmpty(str))
+					textWriter.WriteLine(str);
+			}
+			catch (Exception) { }
+		}
+	}
+	public partial class StiffnessSelect<T>
+	{
+		public override string ToString() { return (mStiffness == null ? "IFCBOOLEAN(" + ParserSTEP.BoolToString(mRigid) + ")" : mStiffness.ToString()); }
+		protected void ParseValue(string str, ReleaseVersion version)
+		{
+			if (str.StartsWith("IFCBOOL"))
+				mRigid = ((IfcBoolean)ParserIfc.parseSimpleValue(str)).Boolean;
+			else if (str.StartsWith("IFC"))
+				mStiffness = ((T)ParserIfc.parseDerivedMeasureValue(str));
+			else if (str.StartsWith("."))
+				mRigid = ParserSTEP.ParseBool(str);
+			else
+			{
+				double d = ParserSTEP.ParseDouble(str), tol = 1e-9;
+				if (!double.IsNaN(d))
+				{
+					if (version < ReleaseVersion.IFC4)
+					{
+						if (Math.Abs(d + 1) < tol)
+						{
+							mStiffness = new T();
+							mStiffness.Measure = -1;
+							mRigid = true;
+						}
+						else if (Math.Abs(d) < tol)
+						{
+							mStiffness = new T();
+							mStiffness.Measure = 0;
+							mRigid = false;
+						}
+					}
+					else
+					{
+						mStiffness = new T();
+						mStiffness.Measure = d;
+					}
+				}
+			}
 		}
 	}
 }

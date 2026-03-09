@@ -24,71 +24,74 @@ using System.IO;
 using System.ComponentModel;
 using System.Linq;
 
+#if (NET || !NOIFCJSON)
+#if (NEWTONSOFT)
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using JsonObject = Newtonsoft.Json.Linq.JObject;
+using JsonArray = Newtonsoft.Json.Linq.JArray;
+#else
+using System.Text.Json.Nodes;
+#endif
 
 namespace GeometryGym.Ifc
 {
-	public abstract partial class IfcValue : IfcMetricValueSelect //SELECT(IfcMeasureValue,IfcSimpleValue,IfcDerivedMeasureValue); stpentity parse method
+	public partial class IfcValue
 	{
-		public JObject getJson(BaseClassIfc host, BaseClassIfc.SetJsonOptions options)
+		public JsonObject getJson(BaseClassIfc host, BaseClassIfc.SetJsonOptions options)
 		{
 			return DatabaseIfc.extract(this);
 		}
 	}
-	public partial class IfcValveType : IfcFlowControllerType
+	public partial class IfcValveType 
 	{
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			JToken token = obj.GetValue("PredefinedType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcValveTypeEnum>(token.Value<string>(), true, out mPredefinedType);
+			base.parseJsonObject(obj);
+			var node = obj["PredefinedType"];
+			if (node != null)
+				Enum.TryParse<IfcValveTypeEnum>(node.GetValue<string>(), true, out mPredefinedType);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			if (mPredefinedType != IfcValveTypeEnum.NOTDEFINED)
 				obj["PredefinedType"] = mPredefinedType.ToString();
 		}
 	}
-	public partial class IfcVertexPoint : IfcVertex, IfcPointOrVertexPoint
+	public partial class IfcVector
 	{
-		internal override void parseJObject(JObject obj)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
-			base.parseJObject(obj);
-			JObject rp = obj.GetValue("VertexGeometry", StringComparison.InvariantCultureIgnoreCase) as JObject;
-			if (rp != null)
-				VertexGeometry = mDatabase.ParseJObject<IfcPoint>(rp);
+			base.setJSON(obj, host, options);
+			obj["Orientation"] = Orientation.getJson(this, options);
+			obj["Magnitude"] = Magnitude;
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		internal override void parseJsonObject(JsonObject obj)
+		{
+			base.parseJsonObject(obj);
+			JsonObject jobj = obj["Pnt"] as JsonObject;
+			if (jobj != null)
+				Orientation = mDatabase.ParseJsonObject<IfcDirection>(jobj);
+			var node = obj["Depth"];
+			if (node != null)
+				mMagnitude = node.GetValue<double>();
+		}
+	}
+	public partial class IfcVertexPoint
+	{
+		internal override void parseJsonObject(JsonObject obj)
+		{
+			base.parseJsonObject(obj);
+			JsonObject rp = obj["VertexGeometry"] as JsonObject;
+			if (rp != null)
+				VertexGeometry = mDatabase.ParseJsonObject<IfcPoint>(rp);
+		}
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 				obj["VertexGeometry"] = VertexGeometry.getJson(this, options);
 		}
 	}
-	public partial class IfcVienneseBend
-	{
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
-		{
-			base.setJSON(obj, host, options);
-			obj["QubicTerm"] = mStartCurvature.ToString();
-			if (double.IsNaN(mEndCurvature))
-				obj["QuadraticTerm"] = mEndCurvature.ToString();
-			if (double.IsNaN(mGravityCenterHeight))
-				obj["Radius"] = mGravityCenterHeight.ToString();
-		}
-		internal override void parseJObject(JObject obj)
-		{
-			base.parseJObject(obj);
-			JToken token = obj.GetValue("QubicTerm", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				mStartCurvature = token.Value<double>();
-			token = obj.GetValue("QuadraticTerm", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				mEndCurvature = token.Value<double>();
-			token = obj.GetValue("LinearTerm", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				mGravityCenterHeight = token.Value<double>();
-		}
-	}
 }
+#endif

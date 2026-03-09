@@ -45,119 +45,34 @@ namespace GeometryGym.Ifc
 		internal string mGlobalId { get; private set; } = ""; // :	IfcGloballyUniqueId;
 		internal void setGlobalId(string globalId)
 		{
-			if (string.IsNullOrEmpty(mGlobalId))
-			{
+			if (globalId == null || globalId.Length == 22)
 				mGlobalId = globalId;
-				return;
-			}
-			if(string.Compare(mGlobalId, globalId, false) != 0)
-			{
-				GlobalIdChangeManager idChangeManager = new GlobalIdChangeManager(this);
+			else if (Guid.TryParse(globalId, out Guid guid))
+				mGlobalId = ParserIfc.EncodeGuid(guid);
+			else
 				mGlobalId = globalId;
-				idChangeManager.updateReferences();
-			}
 		}
-		private class GlobalIdChangeManager
-		{
-			BaseClassIfc mObject = null;
-			List<IfcRelDefinesByProperties> mIsDefinedBy = new List<IfcRelDefinesByProperties>();
-			IfcRelAggregates mDecomposes = null;
-			IfcRelNests mNests = null;
-			IfcRelContainedInSpatialStructure mContainedIn = null;
-			internal GlobalIdChangeManager(BaseClassIfc obj)
-			{
-				mObject = obj;
-				IfcObjectDefinition objectDefinition = obj as IfcObjectDefinition;
-				if(objectDefinition != null)
-				{
-					mIsDefinedBy.AddRange(objectDefinition.mIsDefinedBy);
-					foreach (IfcRelDefinesByProperties rdp in mIsDefinedBy)
-						rdp.RelatedObjects.Remove(objectDefinition);
-
-					mDecomposes = objectDefinition.mDecomposes;
-					if (mDecomposes != null)
-						mDecomposes.RelatedObjects.Remove(objectDefinition);
-					mNests = objectDefinition.mNests;
-					if (mNests != null)
-						mNests.RelatedObjects.Remove(objectDefinition);
-
-					IfcObject o = mObject as IfcObject;
-					if (o != null)
-					{
-						IfcProduct product = objectDefinition as IfcProduct;
-						if (product != null)
-						{
-							mContainedIn = product.mContainedInStructure;
-							if (mContainedIn != null)
-								mContainedIn.RelatedElements.Remove(product);
-						}
-					}
-				}
-			}
-
-			internal void updateReferences()
-			{
-				IfcObjectDefinition objectDefinition = mObject as IfcObjectDefinition;
-				if(objectDefinition != null)
-				{
-					foreach (IfcRelDefinesByProperties isDefinedBy in mIsDefinedBy)
-						isDefinedBy.RelatedObjects.Add(objectDefinition);
-
-					if (mDecomposes != null)
-						mDecomposes.RelatedObjects.Add(objectDefinition);
-					if (mNests != null)
-						mNests.RelatedObjects.Add(objectDefinition);
-
-					IfcObject obj = mObject as IfcObject;
-					if (obj != null)
-					{
-						IfcProduct product = objectDefinition as IfcProduct;
-						if (product != null)
-						{
-							if (mContainedIn != null)
-								mContainedIn.RelatedElements.Add(product);
-						}
-					}
-				}
-			}
-		}
-		protected void ChangeGlobalId(string newGlobalId, string oldGlobalId) 
-		{
-			IfcObjectDefinition objectDefinition = this as IfcObjectDefinition;
-			if(objectDefinition != null)
-			{
-				List<IfcRelDefinesByProperties> isDefinedBy = objectDefinition.mIsDefinedBy.ToList();
-				foreach(IfcRelDefinesByProperties definedBy in isDefinedBy)
-				{
-					definedBy.RelatedObjects.Remove(objectDefinition);
-				}
-			}
-		}
-
+		
 		[NonSerialized] internal DatabaseIfc mDatabase = null;
 
 		public DatabaseIfc Database { get { return mDatabase; } private set { mDatabase = value; } }
 
 #if (NOIFCJSON)
-		public BaseClassIfc() : base() { }// this(new DatabaseIfc(false, ModelView.Ifc4NotAssigned)) { }
+		public BaseClassIfc() : base() { }
 #else
-		public BaseClassIfc() : base() { } // this(new DatabaseIfc(false, ModelView.Ifc4NotAssigned) { Format = FormatIfcSerialization.JSON }) { }
+		public BaseClassIfc() : base() { } 
 #endif
-		protected BaseClassIfc(BaseClassIfc basis, bool replace) : base()
-		{
-			if (replace)
-				basis.ReplaceDatabase(this);
-			else
-				basis.Database.appendObject(this);	
-		}
 		protected BaseClassIfc(DatabaseIfc db, BaseClassIfc e) : base()
 		{
-			mGlobalId = e.mGlobalId;
 			if (db != null)
 			{
+				if (e.mDatabase != null && string.Compare(db.id, e.mDatabase.id, false) != 0)
+					mGlobalId = e.mGlobalId;
 				db.appendObject(this);
-				db.Factory.mDuplicateMapping.AddObject(e, mIndex);
+				db.Factory.mDuplicateMapping.AddObject(e, mStepId);
 			}
+			else
+				mGlobalId = e.mGlobalId;
 		}
 		protected BaseClassIfc(DatabaseIfc db) : base()
 		{
@@ -324,6 +239,9 @@ namespace GeometryGym.Ifc
 							if (thisElement != null && revisedElement != null)
 							{
 								revisedElement.Tag = thisElement.Tag;
+								List<IfcRelVoidsElement> voids = thisElement.HasOpenings.ToList();
+								foreach(var relVoids in voids)
+									relVoids.RelatingBuildingElement = revisedElement;
 							}
 							IfcSpatialElement thisSpatial = this as IfcSpatialElement, revisedSpatial = revised as IfcSpatialElement;
 							if(thisSpatial != null && revisedSpatial != null)
@@ -385,12 +303,12 @@ namespace GeometryGym.Ifc
 					if (styledItem != null)
 						styledItem.Item = revisedItem;
 
-					foreach (IfcShapeModel shapeModel in representationItem.mRepresents.ToList())
+					foreach (IfcShapeModel shapeModel in representationItem.Represents.ToList())
 					{
 						shapeModel.Items.Remove(representationItem);
 						shapeModel.Items.Add(revisedItem);
 					}
-					IfcPresentationLayerAssignment layerAssignment = representationItem.mLayerAssignment;
+					IfcPresentationLayerAssignment layerAssignment = representationItem.LayerAssignment;
 					if (layerAssignment != null)
 					{
 						layerAssignment.AssignedItems.Remove(representationItem);
@@ -398,9 +316,9 @@ namespace GeometryGym.Ifc
 					}
 				}
 			}
-			mDatabase[revised.mIndex] = null;
-			revised.mIndex = mIndex;
-			mDatabase[mIndex] = revised;
+			mDatabase[revised.mStepId] = null;
+			revised.mStepId = StepId;
+			mDatabase[StepId] = revised;
 		}
 		
 		public bool Dispose(bool children)
@@ -413,13 +331,16 @@ namespace GeometryGym.Ifc
 		}
 		protected virtual bool DisposeWorker(bool children)
 		{
-			mDatabase[mIndex] = null;
+			mDatabase[mStepId] = null;
 			return true;
 		}
 		internal virtual List<IBaseClassIfc> retrieveReference(IfcReference reference) { return (reference.InnerReference != null ? null : new List<IBaseClassIfc>() { }); }
 
 		public static Type GetType(string classNameIfc)
 		{
+			Type type = STEPEntity.GetType(classNameIfc, "Ifc");
+			if (type != null)
+				return type;
 			string className = classNameIfc;
 			if (string.Compare(className, "IfcBuildingElement", true) == 0)
 				className = "IfcBuiltElement";
@@ -427,52 +348,74 @@ namespace GeometryGym.Ifc
 				className = "IfcBuiltElementType";
 			else if (string.Compare(className, "IfcBuildingSystem", true) == 0)
 				className = "IfcBuiltSystem";
-			return STEPEntity.GetType(className, "Ifc");	
+			else if (string.Compare(className, "IfcOpeningStandardCase", true) == 0)
+				className = "IfcOpeningElement";
+			else
+			{
+				return null;
+			}
+			return STEPEntity.GetType(className, "Ifc");
 		}
 		public static BaseClassIfc Construct(string ifcClassName)
 		{
 			ConstructorInfo constructor = null;
-			string className = ifcClassName;
-			if (string.Compare(className, "IfcBuildingElement", true) == 0)
-				className = "IfcBuildingElementProxy";
-			if (string.Compare(className, "IfcDistanceExpression", true) == 0)
-				className = "IfcPointByDistanceExpression";
+			if (!mConstructors.TryGetValue(ifcClassName, out constructor))
+			{
+				string className = ifcClassName;
+				if (string.Compare(className, "IfcBuildingElement", true) == 0)
+					className = "IfcBuildingElementProxy";
+				if (string.Compare(className, "IfcDistanceExpression", true) == 0)
+					className = "IfcPointByDistanceExpression";
+				if (string.Compare(className, "IfcProductRepresentation", true) == 0)
+					className = "IfcProductDefinitionShape";
+				if (string.Compare(className, "IfcFacilityPart", true) == 0)
+					className = "IfcFacilityPartCommon";
 
+				if (!mConstructors.TryGetValue(className, out constructor))
+				{
+					Type type = GetType(className);
+					if (type == null)
+						return null;
+					if (type.IsAbstract)
+					{
+						if (string.Compare(className, "IfcProductRepresentation", true) == 0)
+							return Construct("IfcProductDefinitionShape");
+						if (string.Compare(className, "IfcParameterizedProfileDef", true) == 0)
+							return Construct("IfcProfileDef");
+						if (string.Compare(className, "IfcReinforcingElement", true) == 0)
+							return Construct("IfcReinforcingBar");
+						if (string.Compare(className, "IfcBuildingElementComponent", true) == 0)
+							return Construct("IfcBuildingElementPart");
+						if (string.Compare(className, "IfcFlowSegmentType", true) == 0)
+							return Construct("IfcDistributionElementType");
+						if (string.Compare(className, "IfcFlowTerminalType", true) == 0)
+							return Construct("IfcDistributionElementType");
+						else
+							return null;
+					}
+					constructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { }, null);
+					mConstructors[className] = constructor;
+					if (string.Compare(className, ifcClassName, true) != 0)
+						mConstructors[ifcClassName] = constructor;
+				}
+			}
+			return constructor.Invoke(new object[] { }) as BaseClassIfc;
+		}
+		internal static BaseClassIfc Construct(Type ifcType)
+		{
+			string className = ifcType.Name;
+			ConstructorInfo constructor = null;
 			if (!mConstructors.TryGetValue(className, out constructor))
 			{
-				Type type = GetType(className);
-				if (type == null)
-					return null;
-				if (type.IsAbstract)
-				{
-					if (string.Compare(className, "IfcProductRepresentation", true) == 0)
-						return Construct("IfcProductDefinitionShape");
-					if (string.Compare(className, "IfcParameterizedProfileDef", true) == 0)
-						return Construct("IfcProfileDef");
-					if (string.Compare(className, "IfcReinforcingElement", true) == 0)
-						return Construct("IfcReinforcingBar");
-					if (string.Compare(className, "IfcBuildingElementComponent", true) == 0)
-						return Construct("IfcBuildingElementPart");
-					if (string.Compare(className, "IfcFlowSegmentType", true) == 0)
-						return Construct("IfcDistributionElementType");
-					if (string.Compare(className, "IfcFlowTerminalType", true) == 0)
-						return Construct("IfcDistributionElementType");
-					else
-						return null;
-				}
-				constructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { }, null);
+				constructor = ifcType.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { }, null);
 				mConstructors.TryAdd(className, constructor);
 			}
 			return constructor.Invoke(new object[] { }) as BaseClassIfc;
 		}
+
 		internal string formatLength(double length)
 		{
-			if (double.IsNaN(length))
-				return "$";
-			double tol = (mDatabase == null ? 1e-6 : mDatabase.Tolerance / 100);
-			int digits = (mDatabase == null ? 5 : mDatabase.mLengthDigits);
-			double result = Math.Round(length, digits);
-			return ParserSTEP.DoubleToString(Math.Abs(result) < tol ? 0 : result);
+			return ParserIfc.FormatLength(length, mDatabase);	
 		}
 		internal static BaseClassIfc LineParser(string className, string str, ReleaseVersion release, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
@@ -484,8 +427,12 @@ namespace GeometryGym.Ifc
 			return result;
 		}
 
+		internal bool isDuplicate(BaseClassIfc e) { return isDuplicate(e, mDatabase == null ? 1e-5 : mDatabase.Tolerance); }
+		// This method has only partial implementation within opensource project and 
+		// any use of it should be carefully checked.
 		internal virtual bool isDuplicate(BaseClassIfc e, double tol) { return true; }
 
+		internal virtual BaseClassIfc DuplicateCommon(DatabaseIfc db, DuplicateOptions options) { return null; }	
 		internal class RepositoryAttributes
 		{
 			internal DateTime Created { get; set; }
@@ -548,4 +495,17 @@ namespace GeometryGym.Ifc
 		DatabaseIfc Database { get; }
 	}
 	public interface NamedObjectIfc : IBaseClassIfc { string Name { get; } } // GG interface
+
+	public abstract partial class StiffnessSelect<T> where T : IfcDerivedMeasureValue, new()
+	{
+		internal bool mRigid = false;
+		internal T mStiffness = null;
+
+		public bool Rigid { get { return mRigid; } set { mRigid = value; } }
+		public T Stiffness { get { return mStiffness; } set { mStiffness = value; } }
+
+		public StiffnessSelect() { }
+		public StiffnessSelect(bool fix) { mRigid = fix; }
+		public StiffnessSelect(T stiff) { mStiffness = stiff; }
+	}
 }

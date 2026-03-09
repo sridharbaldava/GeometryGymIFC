@@ -18,11 +18,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Text;
+using System.Collections.Specialized;
 using System.Reflection;
-using System.IO;
-using System.ComponentModel;
 using System.Linq;
 using GeometryGym.STEP;
 
@@ -31,12 +28,12 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public partial class IfcZone : IfcSystem
 	{
-		internal string mLongName = "$";// :	OPTIONAL IfcLabel; IFC4
-		public string LongName { get { return (mLongName == "$" ? "" : ParserIfc.Decode(mLongName)); } set { mLongName = (string.IsNullOrEmpty(value) ? "$" : ParserIfc.Encode(value)); } }
+		internal string mLongName = "";// :	OPTIONAL IfcLabel; IFC4
+		public string LongName { get { return mLongName; } set { mLongName = value; } }
 
 		internal IfcZone() : base() { }
 		internal IfcZone(DatabaseIfc db, IfcZone z, DuplicateOptions options) : base(db, z, options) { mLongName = z.mLongName; }
-		internal IfcZone(DatabaseIfc m, string name) : base(m, name) { }
+		internal IfcZone(DatabaseIfc db, string name) : base(db, name) { }
 		public IfcZone(IfcSpatialElement e, string name, List<IfcSpace> spaces) : base(e, name)
 		{
 			if (spaces != null && spaces.Count > 0)

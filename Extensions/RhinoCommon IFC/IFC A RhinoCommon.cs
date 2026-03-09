@@ -28,9 +28,9 @@ using Rhino.Geometry;
 
 namespace GeometryGym.Ifc
 {
-	public partial class IfcAlignmentHorizontal : IfcLinearElement
+	public partial class IfcAlignmentHorizontal
 	{
-		internal Plane planeAtLength(double length, double tol)
+		internal override Plane computePlaneAtLength(double length, double tol)
 		{
 			double distAlong = 0;
 			List<IfcAlignmentHorizontalSegment> segments = HorizontalSegments.ToList();
@@ -50,7 +50,7 @@ namespace GeometryGym.Ifc
 			return Plane.Unset;
 		}
 	}
-	public partial class IfcAlignmentHorizontalSegment : IfcAlignmentParameterSegment
+	public partial class IfcAlignmentHorizontalSegment
 	{
 		public Vector2d StartTangent2d()
 		{
@@ -68,6 +68,7 @@ namespace GeometryGym.Ifc
 		public Plane PlaneAtLength(double length, double tol)
 		{
 			Plane plane = Plane();
+
 			if (mPredefinedType == IfcAlignmentHorizontalSegmentTypeEnum.LINE)
 			{
 				plane.Origin = plane.Origin + plane.XAxis * length;
@@ -82,26 +83,26 @@ namespace GeometryGym.Ifc
 			}
 			else if (mPredefinedType == IfcAlignmentHorizontalSegmentTypeEnum.CLOTHOID)
 			{
-
+#if (!OPEN_SOURCE)
+				TransitionSetout transitionSetout = new TransitionSetout(this, mDatabase.Tolerance);
+				Point2d origin = transitionSetout.computePoint(length);
+				Vector3d xAxis = transitionSetout.mPlane.XAxis * (transitionSetout.mReversed ? -1 : 1);
+				Vector3d yAxis = Vector3d.CrossProduct(Vector3d.ZAxis, xAxis);
+				plane = new Plane(new Point3d(origin.X, origin.Y, 0), xAxis, yAxis);
+				double angleLength = transitionSetout.calcBasisDistance(length);
+				double angle = transitionSetout.computeAngle(angleLength);
+				plane.Rotate(angle, transitionSetout.mPlane.ZAxis, plane.Origin);
+				return plane;
+#endif
 			}
 			throw new NotImplementedException("Plane at length for " + PredefinedType + " not implemented yet!");
 		}
 	}
-	public partial class IfcAlignmentVerticalSegment : IfcAlignmentParameterSegment
+	public partial class IfcAxis1Placement
 	{
-		public double computeHeight(double distAlong)
-		{
-			if(PredefinedType == IfcAlignmentVerticalSegmentTypeEnum.CONSTANTGRADIENT)
-				return StartHeight + StartGradient * (distAlong - StartDistAlong);
-			throw new NotImplementedException("Computation of height for " + PredefinedType + " not implemented yet!");
-		}
+		internal Vector3d AxisVector { get { return (mAxis != null ? Axis.Vector3d : Vector3d.XAxis); } }
 	}
-	public partial class IfcAxis1Placement : IfcPlacement
-	{
-		internal Vector3d AxisVector { get { return (mAxis > 0 ? Axis.Vector3d : Vector3d.XAxis); } }
-	}
-	
-	public partial class IfcAxis2Placement2D : IfcPlacement, IfcAxis2Placement
+	public partial class IfcAxis2Placement2D
 	{
 		internal Vector3d DirectionVector { get { return (mRefDirection != null ? RefDirection.Vector3d : Vector3d.XAxis); } }
 

@@ -18,43 +18,15 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Reflection;
-using System.IO;
-using System.ComponentModel;
 using System.Linq;
 using System.Xml;
-//using System.Xml.Linq;
 
 using GeometryGym.STEP;
 
 
 namespace GeometryGym.Ifc
 {
-	public partial class IfcInclinedReferenceSweptAreaSolid : IfcDirectrixDistanceSweptAreaSolid
-	{
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
-		{
-			base.SetXML(xml, host, processed);
-			if(mFixedAxisVertical != IfcLogicalEnum.UNKNOWN)
-				xml.SetAttribute("FixedAxisVertical", (mFixedAxisVertical == IfcLogicalEnum.TRUE ? "true" : "false"));
-			xml.AppendChild(Inclinating.GetXML(xml.OwnerDocument, "Inclinating", this, processed));
-		}
-		internal override void ParseXml(XmlElement xml)
-		{
-			base.ParseXml(xml);
-			string fixedAxisVertical = xml.GetAttribute("FixedAxisVertical");
-			if (!string.IsNullOrEmpty(fixedAxisVertical))
-				mFixedAxisVertical = ParserIfc.ParseIFCLogical(fixedAxisVertical);
-			foreach (XmlNode child in xml.ChildNodes)
-			{
-				string name = child.Name;
-				if (string.Compare(name, "Inclinating", true) == 0)
-					Inclinating = mDatabase.ParseXml<IfcAxisLateralInclination>(child as XmlElement);
-			}
-		}
-	}
-	public partial class IfcIndexedPolyCurve : IfcBoundedCurve
+	public partial class IfcIndexedPolyCurve
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -70,9 +42,9 @@ namespace GeometryGym.Ifc
 					{
 						List<int> ints = node.InnerText.Split(" ".ToCharArray()).ToList().ConvertAll(x => int.Parse(x));
 						if (string.Compare("IfcLineIndex-wrapper", node.Name) == 0)
-							addSegment(new IfcLineIndex(ints));
+							Segments.Add(new IfcLineIndex(ints));
 						else
-							addSegment(new IfcArcIndex(ints[0], ints[1], ints[2]));
+							Segments.Add(new IfcArcIndex(ints[0], ints[1], ints[2]));
 					}
 				}
 			}
@@ -103,7 +75,7 @@ namespace GeometryGym.Ifc
 			}
 		}
 	}
-	public partial class IfcIShapeProfileDef : IfcParameterizedProfileDef
+	public partial class IfcIShapeProfileDef
 	{
 		internal override void ParseXml(XmlElement xml)
 		{

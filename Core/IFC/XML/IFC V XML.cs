@@ -18,18 +18,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Reflection;
-using System.IO;
-using System.ComponentModel;
 using System.Linq;
 using System.Xml;
-//using System.Xml.Linq;
-
 
 namespace GeometryGym.Ifc
 {
-	public partial class IfcValveType : IfcFlowControllerType
+	public partial class IfcValveType
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -44,7 +38,7 @@ namespace GeometryGym.Ifc
 				xml.SetAttribute("PredefinedType", mPredefinedType.ToString().ToLower());
 		}
 	}
-	public partial class IfcVector : IfcGeometricRepresentationItem
+	public partial class IfcVector
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -64,31 +58,6 @@ namespace GeometryGym.Ifc
 			base.SetXML(xml, host, processed);
 			xml.AppendChild(Orientation.GetXML(xml.OwnerDocument, "Orientation", this, processed));
 			xml.SetAttribute("Magnitude", mMagnitude.ToString());
-		}
-	}
-	public partial class IfcVienneseBend
-	{
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
-		{
-			base.SetXML(xml, host, processed);
-			xml.SetAttribute("QubicTerm", mStartCurvature.ToString());
-			if (!double.IsNaN(mEndCurvature))
-				xml.SetAttribute("QuadraticTerm", mEndCurvature.ToString());
-			if (!double.IsNaN(mGravityCenterHeight))
-				xml.SetAttribute("LinearTerm", mGravityCenterHeight.ToString());
-		}
-		internal override void ParseXml(XmlElement xml)
-		{
-			base.ParseXml(xml);
-			string att = xml.GetAttribute("QubicTerm");
-			if (!string.IsNullOrEmpty(att))
-				double.TryParse(att, out mStartCurvature);
-			att = xml.GetAttribute("QuadraticTerm");
-			if (!string.IsNullOrEmpty(att))
-				double.TryParse(att, out mEndCurvature);
-			att = xml.GetAttribute("LinearTerm");
-			if (!string.IsNullOrEmpty(att))
-				double.TryParse(att, out mGravityCenterHeight);
 		}
 	}
 }

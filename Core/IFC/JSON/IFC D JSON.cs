@@ -24,87 +24,78 @@ using System.IO;
 using System.ComponentModel;
 using System.Linq;
 
+#if (NET || !NOIFCJSON)
+#if (NEWTONSOFT)
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using JsonObject = Newtonsoft.Json.Linq.JObject;
+using JsonArray = Newtonsoft.Json.Linq.JArray;
+#else
+using System.Text.Json.Nodes;
+#endif
 
 namespace GeometryGym.Ifc
 {
-	public partial class IfcDerivedUnit : BaseClassIfc, IfcUnit
+	public partial class IfcDerivedUnit
 	{
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			Elements = mDatabase.extractJArray<IfcDerivedUnitElement>(obj.GetValue("Elements", StringComparison.InvariantCultureIgnoreCase) as JArray);
-			JToken token = obj.GetValue("UnitType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcDerivedUnitEnum>(token.Value<string>(), true, out mUnitType);
-			token = obj.GetValue("UserDefinedType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				UserDefinedType = token.Value<string>();
+			base.parseJsonObject(obj);
+			Elements.AddRange(mDatabase.extractJsonArray<IfcDerivedUnitElement>(obj["Elements"] as JsonArray));
+			var node = obj["UnitType"];
+			if (node != null)
+				Enum.TryParse<IfcDerivedUnitEnum>(node.GetValue<string>(), true, out mUnitType);
+			UserDefinedType = extractString(obj["UserDefinedType"]);
+			Name = extractString(obj["Name"]);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			if (mElements.Count > 0)
 			{
-				JArray array = new JArray();
-				foreach (int i in mElements)
-					array.Add(mDatabase[i].getJson(this, options));
+				JsonArray array = new JsonArray();
+				foreach (IfcDerivedUnitElement derived in mElements)
+					array.Add(derived.getJson(this, options));
 				obj["Elements"] = array;
 			}
 			base.setAttribute(obj, "UnitType", mUnitType.ToString());
 			base.setAttribute(obj, "UserDefinedType", UserDefinedType);
+			base.setAttribute(obj, "Name", Name);
 
 		}
 	}
-	public partial class IfcDerivedUnitElement : BaseClassIfc
+	public partial class IfcDerivedUnitElement
 	{
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
+			base.parseJsonObject(obj);
 
-			JObject jobj = obj.GetValue("Unit", StringComparison.InvariantCultureIgnoreCase) as JObject;
+			JsonObject jobj = obj["Unit"] as JsonObject;
 			if (jobj != null)
 				Unit = extractObject<IfcNamedUnit>(jobj);
-			JToken token = obj.GetValue("Exponent", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Exponent = token.Value<int>();
+			mExponent = extractInt(obj["Exponent"], 0);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			obj["Unit"] = Unit.getJson(this, options);
 			obj["Exponent"] = mExponent;
 		}
 	}
-	public partial class IfcDimensionalExponents : BaseClassIfc
+	public partial class IfcDimensionalExponents
 	{
-		//		internal int mLengthExponent, mMassExponent, mTimeExponent, mElectricCurrentExponent, mThermodynamicTemperatureExponent, mAmountOfSubstanceExponent, mLuminousIntensityExponent;// : INTEGER;
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			JToken token = obj.GetValue("LengthExponent", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				int.TryParse(token.Value<string>(), out mLengthExponent);
-			token = obj.GetValue("MassExponent", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				int.TryParse(token.Value<string>(), out mMassExponent);
-			token = obj.GetValue("TimeExponent", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				int.TryParse(token.Value<string>(), out mTimeExponent);
-			token = obj.GetValue("ElectricCurrentExponent", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				int.TryParse(token.Value<string>(), out mElectricCurrentExponent);
-			token = obj.GetValue("ThermodynamicTemperatureExponent", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				int.TryParse(token.Value<string>(), out mThermodynamicTemperatureExponent);
-			token = obj.GetValue("AmountOfSubstanceExponent", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				int.TryParse(token.Value<string>(), out mAmountOfSubstanceExponent);
-			token = obj.GetValue("LuminousIntensityExponent", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				int.TryParse(token.Value<string>(), out mLuminousIntensityExponent);
+			base.parseJsonObject(obj);
+			mLengthExponent = extractInt(obj["LengthExponent"], 0);
+			mMassExponent = extractInt(obj["MassExponent"], 0);
+			mTimeExponent = extractInt(obj["TimeExponent"], 0);
+			mElectricCurrentExponent = extractInt(obj["ElectricCurrentExponent"], 0);
+			mThermodynamicTemperatureExponent = extractInt(obj["ThermodynamicTemperatureExponent"], 0);
+			mAmountOfSubstanceExponent = extractInt(obj["AmountOfSubstanceExponent"], 0);
+			mLuminousIntensityExponent = extractInt(obj["LuminousIntensityExponent"], 0);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			if (mLengthExponent != 0)
@@ -123,28 +114,28 @@ namespace GeometryGym.Ifc
 				obj["LuminousIntensityExponent"] = mLuminousIntensityExponent;
 		}
 	}
-	public partial class IfcDirection : IfcGeometricRepresentationItem
+	public partial class IfcDirection
 	{
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			JToken token = obj.GetValue("DirectionRatios", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
+			base.parseJsonObject(obj);
+			var node = obj["DirectionRatios"];
+			if (node != null)
 			{
-				JArray array = token as JArray;
+				JsonArray array = node as JsonArray;
 				if (array != null)
 				{
-					mDirectionRatioX = array[0].Value<double>();
+					mDirectionRatioX = array[0].GetValue<double>();
 					if (array.Count > 1)
 					{
-						mDirectionRatioY = array[1].Value<double>();
+						mDirectionRatioY = array[1].GetValue<double>();
 						if (array.Count > 2)
-							mDirectionRatioZ = array[2].Value<double>();
+							mDirectionRatioZ = array[2].GetValue<double>();
 					}
 				}
 				else
 				{
-					string[] values = token.Value<string>().Split(" ".ToCharArray());
+					string[] values = node.GetValue<string>().Split(" ".ToCharArray());
 					if (values.Length > 0)
 					{
 						mDirectionRatioX = double.Parse(values[0]);
@@ -158,15 +149,15 @@ namespace GeometryGym.Ifc
 				}
 			}
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
-			obj["DirectionRatios"] = mDirectionRatioX + (double.IsNaN(mDirectionRatioY) ? "" : (" " + RoundRatio(mDirectionRatioY) + (double.IsNaN(mDirectionRatioZ) ? "" : " " + RoundRatio(mDirectionRatioZ))));
+			obj["DirectionRatios"] = mDirectionRatioX + (double.IsNaN(mDirectionRatioY) ? "" : (" " + FormatRatio(mDirectionRatioY) + (double.IsNaN(mDirectionRatioZ) ? "" : " " + FormatRatio(mDirectionRatioZ))));
 		}
 	}
-	public abstract partial class IfcDirectrixCurveSweptAreaSolid : IfcSweptAreaSolid
+	public partial class IfcDirectrixCurveSweptAreaSolid 
 	{
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			obj["Directrix"] = Directrix.getJson(this, options);
@@ -174,98 +165,73 @@ namespace GeometryGym.Ifc
 			{
 				IfcParameterValue startParameter = mStartParam as IfcParameterValue;
 				if(startParameter != null)
-					obj["StartParam"] = startParameter.Measure.ToString();
+					obj["StartParam"] = startParameter.Measure;
 				IfcParameterValue endParameter = mEndParam as IfcParameterValue;
 				if(endParameter != null)
-					obj["EndParam"] = endParameter.Measure.ToString();
+					obj["EndParam"] = endParameter.Measure;
 			}
 		}
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			JObject jobj = obj.GetValue("Directrix", StringComparison.InvariantCultureIgnoreCase) as JObject;
+			base.parseJsonObject(obj);
+			JsonObject jobj = obj["Directrix"] as JsonObject;
 			if (jobj != null)
-				Directrix = mDatabase.ParseJObject<IfcCurve>(jobj);
-			JToken startParam = obj.GetValue("StartParam", StringComparison.InvariantCultureIgnoreCase);
-			if (startParam != null)
-				mStartParam = new IfcParameterValue(startParam.Value<double>());
-			JToken endParam = obj.GetValue("EndParam", StringComparison.InvariantCultureIgnoreCase);
-			if (endParam != null)
-				mEndParam = new	IfcParameterValue(endParam.Value<double>());
+				Directrix = mDatabase.ParseJsonObject<IfcCurve>(jobj);
+			var node = obj["StartParam"];
+			if (node != null)
+				mStartParam = new IfcParameterValue(node.GetValue<double>());
+			node = obj["EndParam"];
+			if (node != null)
+				mEndParam = new	IfcParameterValue(node.GetValue<double>());
 		}
 	}
-	public abstract partial class IfcDirectrixDistanceSweptAreaSolid : IfcSweptAreaSolid
+	public partial class IfcDistributionBoard
 	{
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
-		{
-			base.setJSON(obj, host, options);
-			obj["Directrix"] = Directrix.getJson(this, options);
-			if (StartDistance != null)
-				obj["StartDistance"] = StartDistance.getJson(this, options);
-			if (EndDistance != null)
-				obj["EndDistance"] = EndDistance.getJson(this, options);
-		}
-		internal override void parseJObject(JObject obj)
-		{
-			base.parseJObject(obj);
-			JObject jobj = obj.GetValue("Directrix", StringComparison.InvariantCultureIgnoreCase) as JObject;
-			if (jobj != null)
-				Directrix = mDatabase.ParseJObject<IfcCurve>(jobj);
-			jobj = obj.GetValue("StartDistance", StringComparison.InvariantCultureIgnoreCase) as JObject;
-			if (jobj != null)
-				StartDistance = mDatabase.ParseJObject<IfcPointByDistanceExpression>(jobj);
-			jobj = obj.GetValue("EndDistance", StringComparison.InvariantCultureIgnoreCase) as JObject;
-			if (jobj != null)
-				EndDistance = mDatabase.ParseJObject<IfcPointByDistanceExpression>(jobj);
-		}
-	}
-	public partial class IfcDistributionBoard : IfcFlowController
-	{
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			if (mPredefinedType != IfcDistributionBoardTypeEnum.NOTDEFINED)
 				obj["PredefinedType"] = mPredefinedType.ToString();
 		}
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			JToken token = obj.GetValue("PredefinedType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcDistributionBoardTypeEnum>(token.Value<string>(), true, out mPredefinedType);
+			base.parseJsonObject(obj);
+			var node = obj["PredefinedType"];
+			if (node != null)
+				Enum.TryParse<IfcDistributionBoardTypeEnum>(node.GetValue<string>(), true, out mPredefinedType);
 		}
 	}
-	public partial class IfcDistributionBoardType : IfcFlowControllerType
+	public partial class IfcDistributionBoardType
 	{
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			obj["PredefinedType"] = mPredefinedType.ToString();
 		}
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			JToken token = obj.GetValue("PredefinedType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcDistributionBoardTypeEnum>(token.Value<string>(), true, out mPredefinedType);
+			base.parseJsonObject(obj);
+			var node = obj["PredefinedType"];
+			if (node != null)
+				Enum.TryParse<IfcDistributionBoardTypeEnum>(node.GetValue<string>(), true, out mPredefinedType);
 		}
 	}
-	public partial class IfcDistributionPort : IfcPort
+	public partial class IfcDistributionPort
 	{
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			JToken token = obj.GetValue("FlowDirection", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcFlowDirectionEnum>(token.Value<string>(), true, out mFlowDirection);
-			token = obj.GetValue("PredefinedType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcDistributionPortTypeEnum>(token.Value<string>(), true, out mPredefinedType);
-			token = obj.GetValue("SystemType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcDistributionSystemEnum>(token.Value<string>(), true, out mSystemType);
+			base.parseJsonObject(obj);
+			var node = obj["FlowDirection"];
+			if (node != null)
+				Enum.TryParse<IfcFlowDirectionEnum>(node.GetValue<string>(), true, out mFlowDirection);
+			node = obj["PredefinedType"];
+			if (node != null)
+				Enum.TryParse<IfcDistributionPortTypeEnum>(node.GetValue<string>(), true, out mPredefinedType);
+			node = obj["SystemType"];
+			if (node != null)
+				Enum.TryParse<IfcDistributionSystemEnum>(node.GetValue<string>(), true, out mSystemType);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			if (mFlowDirection != IfcFlowDirectionEnum.NOTDEFINED)
@@ -276,43 +242,35 @@ namespace GeometryGym.Ifc
 				obj["SystemType"] = mSystemType.ToString();
 		}
 	}
-	public partial class IfcDocumentInformation : IfcExternalInformation, IfcDocumentSelect
+	public partial class IfcDocumentInformation
 	{
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			Identification = extractString(obj.GetValue("Idenfification", StringComparison.InvariantCultureIgnoreCase));
-			Name = extractString(obj.GetValue("Name", StringComparison.InvariantCultureIgnoreCase));
-			Description = extractString(obj.GetValue("Description", StringComparison.InvariantCultureIgnoreCase));
-			mDatabase.extractJArray<IfcDocumentReference>(obj.GetValue("DocumentReferences", StringComparison.InvariantCultureIgnoreCase) as JArray).ForEach(x => addReference(x));
-			Location = extractString(obj.GetValue("Location", StringComparison.InvariantCultureIgnoreCase));
-			Purpose = extractString(obj.GetValue("Purpose", StringComparison.InvariantCultureIgnoreCase));
-			Revision = extractString(obj.GetValue("Revision", StringComparison.InvariantCultureIgnoreCase));
-			JObject jobj = obj["DocumentOwner"] as JObject;
+			base.parseJsonObject(obj);
+			Identification = extractString(obj["Idenfification"]);
+			Name = extractString(obj["Name"]);
+			Description = extractString(obj["Description"]);
+			DocumentReferences.AddRange(mDatabase.extractJsonArray<IfcDocumentReference>(obj["DocumentReferences"] as JsonArray));
+			Location = extractString(obj["Location"]);
+			Purpose = extractString(obj["Purpose"]);
+			Revision = extractString(obj["Revision"]);
+			JsonObject jobj = obj["DocumentOwner"] as JsonObject;
 			if (jobj != null)
-				DocumentOwner = mDatabase.ParseJObject<IfcActorSelect>(jobj);
-			mDatabase.extractJArray<IfcActorSelect>(obj.GetValue("Editors", StringComparison.InvariantCultureIgnoreCase) as JArray).ForEach(x => addEditor(x));
-			JToken token = obj.GetValue("CreationTime");
-			if(token != null)
-				CreationTime = DateTime.Parse(token.Value<string>());
-			token = obj.GetValue("LastRevisionTime");
-			if(token != null)
-				LastRevisionTime = DateTime.Parse(token.Value<string>());
-			ElectronicFormat = extractString(obj.GetValue("ElectronicFormat", StringComparison.InvariantCultureIgnoreCase));
-			token = obj.GetValue("ValidFrom");
-			if(token != null)
-				ValidFrom = DateTime.Parse(token.Value<string>());
-			token = obj.GetValue("ValidUntil");
-			if(token != null)
-				ValidUntil = DateTime.Parse(token.Value<string>());
-			token = obj.GetValue("Confidentiality");
-			if (token != null)
-				Enum.TryParse<IfcDocumentConfidentialityEnum>(token.Value<string>(), true, out mConfidentiality);
-			token = obj.GetValue("Status");
-			if (token != null)
-				Enum.TryParse<IfcDocumentStatusEnum>(token.Value<string>(), true, out mStatus);
+				DocumentOwner = mDatabase.ParseJsonObject<IfcActorSelect>(jobj);
+			Editors.AddRange(mDatabase.extractJsonArray<IfcActorSelect>(obj["Editors"] as JsonArray));
+			CreationTime = extractDateTime(obj, "CreationTime");
+			LastRevisionTime = extractDateTime(obj, "LastRevisionTime");
+			ElectronicFormat = extractString(obj["ElectronicFormat"]);
+			ValidFrom = extractDateTime(obj, "ValidFrom");
+			ValidUntil = extractDateTime(obj, "ValidUntil");
+			var node = obj["Confidentiality"];
+			if (node != null)
+				Enum.TryParse<IfcDocumentConfidentialityEnum>(node.GetValue<string>(), true, out mConfidentiality);
+			node = obj["Status"];
+			if (node != null)
+				Enum.TryParse<IfcDocumentStatusEnum>(node.GetValue<string>(), true, out mStatus);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			setAttribute(obj, "Identification", Identification);
@@ -321,10 +279,9 @@ namespace GeometryGym.Ifc
 			setAttribute(obj, "Location", Location);
 			setAttribute(obj, "Purpose", Purpose);
 			setAttribute(obj, "Revision", Revision);
-			if(mDocumentOwner > 0)
-				obj["DocumentOwner"] = mDatabase[mDocumentOwner].getJson(this, options);
-			if(mEditors.Count > 0)
-				obj["Editors"] = new JArray(mEditors.ToList().ConvertAll(x => mDatabase[x].getJson(this, options)));
+			if(mDocumentOwner != null)
+				obj["DocumentOwner"] = mDocumentOwner.getJson(this, options);
+			createArray(obj, "Editors", Editors, this, options);
 			if (mCreationTime != DateTime.MinValue)
 				obj["CreationTime"] = IfcDateTime.FormatSTEP(CreationTime);
 			if (mLastRevisionTime != DateTime.MinValue)
@@ -340,46 +297,42 @@ namespace GeometryGym.Ifc
 				obj["Status"] = mStatus.ToString();
 		}
 	}
-	public partial class IfcDocumentReference : IfcExternalReference, IfcDocumentSelect
+	public partial class IfcDocumentReference
 	{
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			Description = extractString(obj.GetValue("Description", StringComparison.InvariantCultureIgnoreCase));
-			JObject jobj = obj["ReferencedDocument"] as JObject;
+			base.parseJsonObject(obj);
+			Description = extractString(obj["Description"]);
+			JsonObject jobj = obj["ReferencedDocument"] as JsonObject;
 			if (jobj != null)
-				ReferencedDocument = mDatabase.ParseJObject<IfcDocumentInformation>(jobj);
+				ReferencedDocument = mDatabase.ParseJsonObject<IfcDocumentInformation>(jobj);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			setAttribute(obj, "Description", Description);
-			if (mReferencedDocument > 0)
+			if (mReferencedDocument != null)
 				obj["ReferencedDocument"] = ReferencedDocument.getJson(this, options);
 		}
 	}
-	public partial class IfcDoorPanelProperties : IfcPreDefinedPropertySet //IFC2x3 IfcPropertySetDefinition
+	public partial class IfcDoorPanelProperties
 	{
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			JToken token = obj.GetValue("PanelDepth", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				mPanelDepth = token.Value<double>();
-			token = obj.GetValue("OperationType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcDoorPanelOperationEnum>(token.Value<string>(), true, out mOperationType);
-			token = obj.GetValue("PanelWidth", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				mPanelWidth = token.Value<double>();
-			token = obj.GetValue("PanelPosition", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcDoorPanelPositionEnum>(token.Value<string>(), true, out mPanelPosition);
-			JObject jobj = obj.GetValue("ShapeAspectStyle", StringComparison.InvariantCultureIgnoreCase) as JObject;
+			base.parseJsonObject(obj);
+			mPanelDepth = extractDouble(obj["PanelDepth"]);
+			var node = obj["OperationType"];
+			if (node != null)
+				Enum.TryParse<IfcDoorPanelOperationEnum>(node.GetValue<string>(), true, out mOperationType);
+			mPanelWidth = extractDouble(obj["PanelWidth"]);
+			node = obj["PanelPosition"];
+			if (node != null)
+				Enum.TryParse<IfcDoorPanelPositionEnum>(node.GetValue<string>(), true, out mPanelPosition);
+			JsonObject jobj = obj["ShapeAspectStyle"] as JsonObject;
 			if (jobj != null)
-				ShapeAspectStyle = mDatabase.ParseJObject<IfcShapeAspect>(jobj);
+				ShapeAspectStyle = mDatabase.ParseJsonObject<IfcShapeAspect>(jobj);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			if (!double.IsNaN(mPanelDepth))
@@ -388,29 +341,29 @@ namespace GeometryGym.Ifc
 			if (!double.IsNaN(mPanelWidth))
 				obj["PanelWidth"] = mPanelWidth;
 			obj["PanelPosition"] = mPanelPosition.ToString();
-			if (mShapeAspectStyle > 0)
+			if (mShapeAspectStyle != null)
 				obj["ShapeAspectStyle"] = ShapeAspectStyle.getJson(this, options);
 		}
 	}
 	public partial class IfcDoorType : IfcBuiltElementType //IFC2x3 IfcDoorStyle
 	{
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			JToken token = obj.GetValue("PredefinedType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcDoorTypeEnum>(token.Value<string>(), true, out mPredefinedType);
-			token = obj.GetValue("OperationType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcDoorTypeOperationEnum>(token.Value<string>(), true, out mOperationType);
-			token = obj.GetValue("ParameterTakesPrecedence", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				mParameterTakesPrecedence = token.Value<bool>();
-			token = obj.GetValue("UserDefinedOperationType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				UserDefinedOperationType = token.Value<string>();
+			base.parseJsonObject(obj);
+			var node = obj["PredefinedType"];
+			if (node != null)
+				Enum.TryParse<IfcDoorTypeEnum>(node.GetValue<string>(), true, out mPredefinedType);
+			node = obj["OperationType"];
+			if (node != null)
+				Enum.TryParse<IfcDoorTypeOperationEnum>(node.GetValue<string>(), true, out mOperationType);
+			node = obj["ParameterTakesPrecedence"];
+			if (node != null)
+				mParameterTakesPrecedence = node.GetValue<bool>();
+			node = obj["UserDefinedOperationType"];
+			if (node != null)
+				UserDefinedOperationType = node.GetValue<string>();
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			obj["PredefinedType"] = mPredefinedType.ToString();
@@ -420,3 +373,4 @@ namespace GeometryGym.Ifc
 		}
 	}
 }
+#endif

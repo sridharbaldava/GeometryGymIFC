@@ -3,23 +3,25 @@ using System.Drawing;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
+using GeometryGym.STEP;
+
 namespace GeometryGym.Ifc
 {
-	public abstract partial class IfcPreDefinedColour : IfcPreDefinedItem, IfcColour //	ABSTRACT SUPERTYPE OF(IfcDraughtingPreDefinedColour)
+	public abstract partial class IfcPreDefinedColour
 	{
 		public Color Color() { return System.Drawing.Color.Empty; }
 	}
-	public partial class IfcPresentationLayerAssignment : BaseClassIfc //SUPERTYPE OF	(IfcPresentationLayerWithStyle);
+	public partial class IfcPresentationLayerAssignment
 	{
 		internal virtual Color LayerColour { get { return Color.Empty; } }
 	}
-	public partial class IfcPresentationLayerWithStyle : IfcPresentationLayerAssignment
+	public partial class IfcPresentationLayerWithStyle
 	{
 		internal override Color LayerColour
 		{
 			get
 			{
-				ReadOnlyCollection<IfcPresentationStyle> styles = LayerStyles;
+				SET<IfcPresentationStyle> styles = LayerStyles;
 				foreach (IfcPresentationStyle ps in styles)
 				{
 					IfcSurfaceStyle ss = ps as IfcSurfaceStyle;

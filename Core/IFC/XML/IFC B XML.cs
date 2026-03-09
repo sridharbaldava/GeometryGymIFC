@@ -18,18 +18,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Reflection;
-using System.IO;
-using System.ComponentModel;
 using System.Linq;
 using System.Xml;
-//using System.Xml.Linq;
-
 
 namespace GeometryGym.Ifc
 {
-	public partial class IfcBeam : IfcBuiltElement
+	public partial class IfcBeam
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -44,7 +38,7 @@ namespace GeometryGym.Ifc
 				xml.SetAttribute("PredefinedType", mPredefinedType.ToString().ToLower());
 		}
 	}
-	public partial class IfcBeamType : IfcBuiltElementType
+	public partial class IfcBeamType
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -59,7 +53,7 @@ namespace GeometryGym.Ifc
 				xml.SetAttribute("PredefinedType", mPredefinedType.ToString().ToLower());
 		}
 	}
-	public partial class IfcBlock : IfcCsgPrimitive3D
+	public partial class IfcBlock
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -79,32 +73,7 @@ namespace GeometryGym.Ifc
 			xml.SetAttribute("ZLength", ZLength.ToString());
 		}
 	}
-	public partial class IfcBlossCurve
-	{
-		internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
-		{
-			base.SetXML(xml, host, processed);
-			xml.SetAttribute("QubicTerm", mQubicTerm.ToString());
-			if(!double.IsNaN(mQuadraticTerm))
-				xml.SetAttribute("QuadraticTerm", mQuadraticTerm.ToString());
-			if(!double.IsNaN(mLinearTerm))
-				xml.SetAttribute("LinearTerm", mLinearTerm.ToString());
-		}
-		internal override void ParseXml(XmlElement xml)
-		{
-			base.ParseXml(xml);
-			string att = xml.GetAttribute("QubicTerm");
-			if (!string.IsNullOrEmpty(att))
-				double.TryParse(att, out mQubicTerm);
-			att = xml.GetAttribute("QuadraticTerm");
-			if (!string.IsNullOrEmpty(att))
-				double.TryParse(att, out mQuadraticTerm);
-			att = xml.GetAttribute("LinearTerm");
-			if (!string.IsNullOrEmpty(att))
-				double.TryParse(att, out mLinearTerm);
-		}
-	}
-	public partial class IfcBooleanResult : IfcGeometricRepresentationItem, IfcBooleanOperand, IfcCsgSelect
+	public partial class IfcBooleanResult
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -128,7 +97,7 @@ namespace GeometryGym.Ifc
 			xml.AppendChild((mSecondOperand as BaseClassIfc).GetXML(xml.OwnerDocument, "SecondOperand", this, processed));
 		}
 	}
-	public partial class IfcBoundingBox : IfcGeometricRepresentationItem
+	public partial class IfcBoundingBox
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -155,7 +124,7 @@ namespace GeometryGym.Ifc
 			xml.SetAttribute("ZDim", mZDim.ToString());
 		}
 	}
-	public abstract partial class IfcBSplineSurface : IfcBoundedSurface
+	public partial class IfcBSplineSurface
 	{
 		//internal override void SetXML(XmlElement xml, BaseClassIfc host, Dictionary<string, XmlElement> processed)
 		//{
@@ -166,7 +135,7 @@ namespace GeometryGym.Ifc
 		//	xml.SetAttribute("ZDim", mZDim.ToString());
 		//}
 	}
-	public partial class IfcBuilding : IfcFacility
+	public partial class IfcBuilding
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -193,7 +162,7 @@ namespace GeometryGym.Ifc
 				xml.AppendChild(BuildingAddress.GetXML(xml.OwnerDocument, "BuildingAddress", this, processed));
 		}
 	}
-	public partial class IfcBuildingElementProxy : IfcBuiltElement
+	public partial class IfcBuildingElementProxy
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -218,7 +187,7 @@ namespace GeometryGym.Ifc
 			}
 		}
 	}
-	public partial class IfcBuildingElementProxyType : IfcBuiltElementType
+	public partial class IfcBuildingElementProxyType
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -233,7 +202,7 @@ namespace GeometryGym.Ifc
 				xml.SetAttribute("PredefinedType", mPredefinedType.ToString().ToLower());
 		}
 	}
-	public partial class IfcBuildingStorey : IfcSpatialStructureElement
+	public partial class IfcBuildingStorey
 	{
 		internal override void ParseXml(XmlElement xml)
 		{

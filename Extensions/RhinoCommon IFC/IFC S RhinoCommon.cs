@@ -31,7 +31,9 @@ namespace GeometryGym.Ifc
 	{
 		public Vector3d LinearForce
 		{
-			get { return new Vector3d(mLinearForceX, mLinearForceY, mLinearForceZ); }
+			get { return new Vector3d(double.IsNaN(mLinearForceX) ? 0 : mLinearForceX,
+				double.IsNaN(mLinearForceY) ? 0 : mLinearForceY,
+				double.IsNaN(mLinearForceZ) ? 0 : mLinearForceZ); }
 			set
 			{
 				if (value.IsValid)
@@ -46,7 +48,9 @@ namespace GeometryGym.Ifc
 		}
 		public Vector3d LinearMoment
 		{
-			get { return new Vector3d(mLinearMomentX, mLinearMomentY, mLinearMomentZ); }
+			get { return new Vector3d(double.IsNaN(mLinearMomentX) ? 0 : mLinearMomentX,
+				double.IsNaN(mLinearMomentY) ? 0 : mLinearMomentY,
+				double.IsNaN(mLinearMomentZ) ? 0 : mLinearMomentZ); }
 			set
 			{
 				if (value.IsValid)
@@ -65,7 +69,7 @@ namespace GeometryGym.Ifc
 	{
 		public Vector3d PlanarForce
 		{
-			get { return new Vector3d(mPlanarForceX, mPlanarForceY, mPlanarForceZ); }
+			get { return new Vector3d(PlanarForceX, PlanarForceY, PlanarForceZ); }
 			set
 			{
 				if (value.IsValid)
@@ -116,7 +120,7 @@ namespace GeometryGym.Ifc
 	{
 		public Vector3d Force
 		{
-			get { return new Vector3d(mForceX, mForceY, mForceZ); }
+			get { return new Vector3d(ForceX, ForceY, ForceZ); }
 			set
 			{
 				if (value.IsValid)
@@ -131,7 +135,7 @@ namespace GeometryGym.Ifc
 		}
 		public Vector3d Moment
 		{
-			get { return new Vector3d(mMomentX, mMomentY, mMomentZ); }
+			get { return new Vector3d(MomentX, MomentY, MomentZ); }
 			set
 			{
 				if (value.IsValid)

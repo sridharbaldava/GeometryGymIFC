@@ -18,25 +18,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections;
 using System.Text;
 using System.Reflection;
 using System.IO;
+using System.ComponentModel;
+using System.Linq;
+using System.Xml;
+//using System.Xml.Linq;
 
-using Rhino.Geometry;
-using Rhino.Geometry.Intersect;
 
 namespace GeometryGym.Ifc
 {
-	public partial class IfcVector
-	{
-		internal Vector3d Vector { get { return Orientation.Vector3d * mMagnitude; } }
-
-		public IfcVector(DatabaseIfc db, Vector2d v) : base(db) { Orientation = new IfcDirection(db, v); mMagnitude = v.Length; }
-		public IfcVector(DatabaseIfc db, Vector3d v) : base(db) { Orientation = new IfcDirection(db, v); mMagnitude = v.Length; }
-	}
-	public partial class IfcVirtualGridIntersection
-	{
-		internal Vector3d OffsetVector { get { return new Vector3d(mOffsetDistances.Item1, mOffsetDistances.Item2, double.IsNaN(mOffsetDistances.Item3) ? 0 : mOffsetDistances.Item3); } }
-	}
+	
 }

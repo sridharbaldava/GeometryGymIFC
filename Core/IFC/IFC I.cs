@@ -18,11 +18,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Text;
+using System.Collections.Specialized;
 using System.Reflection;
-using System.IO;
-using System.ComponentModel;
 using System.Linq;
 using GeometryGym.STEP;
 
@@ -32,17 +29,17 @@ namespace GeometryGym.Ifc
 	public partial class IfcImageTexture : IfcSurfaceTexture
 	{
 		internal string mUrlReference;// : IfcIdentifier; 
-		public string UrlReference { get { return ParserIfc.Decode(mUrlReference); } set { mUrlReference = ParserIfc.Encode(value); } }
+		public string UrlReference { get { return mUrlReference; } set { mUrlReference = value; } }
 
 		internal IfcImageTexture() : base() { }
-		internal IfcImageTexture(DatabaseIfc db, IfcImageTexture t) : base(db, t) { mUrlReference = t.mUrlReference; }
+		internal IfcImageTexture(DatabaseIfc db, IfcImageTexture t, DuplicateOptions options) : base(db, t, options) { mUrlReference = t.mUrlReference; }
 		public IfcImageTexture(DatabaseIfc db, bool repeatS, bool repeatT, string urlReference) : base(db, repeatS, repeatT) { UrlReference = urlReference; }
 	}
 	[Serializable]
 	public partial class IfcImpactProtectionDevice : IfcElementComponent
 	{
-		private IfcImpactProtectionDeviceTypeSelect mPredefinedType = null; //: OPTIONAL IfcImpactProtectionDeviceTypeSelect;
-		public IfcImpactProtectionDeviceTypeSelect PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
+		private IfcImpactProtectionDeviceTypeEnum mPredefinedType = IfcImpactProtectionDeviceTypeEnum.NOTDEFINED; //: OPTIONAL IfcImpactProtectionDeviceTypeEnum;
+		public IfcImpactProtectionDeviceTypeEnum PredefinedType { get { return mPredefinedType; }  set { mPredefinedType = validPredefinedType<IfcImpactProtectionDeviceTypeEnum>(value, mDatabase == null ? ReleaseVersion.IFC4X3 : mDatabase.Release); } }
 
 		public IfcImpactProtectionDevice() : base() { }
 		public IfcImpactProtectionDevice(DatabaseIfc db) : base(db) { }
@@ -52,55 +49,48 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public partial class IfcImpactProtectionDeviceType : IfcElementComponentType
 	{
-		private IfcImpactProtectionDeviceTypeSelect mPredefinedType = null; //: IfcImpactProtectionDeviceTypeSelect;
-		public IfcImpactProtectionDeviceTypeSelect PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
+		private IfcImpactProtectionDeviceTypeEnum mPredefinedType = IfcImpactProtectionDeviceTypeEnum.NOTDEFINED; //: IfcImpactProtectionDeviceTypeEnum;
+		public IfcImpactProtectionDeviceTypeEnum PredefinedType { get { return mPredefinedType; }  set { mPredefinedType = validPredefinedType<IfcImpactProtectionDeviceTypeEnum>(value, mDatabase == null ? ReleaseVersion.IFC4X3 : mDatabase.Release); } }
 
 		public IfcImpactProtectionDeviceType() : base() { }
 		public IfcImpactProtectionDeviceType(DatabaseIfc db, IfcImpactProtectionDeviceType impactProtectionDeviceType, DuplicateOptions options) : base(db, impactProtectionDeviceType, options) { PredefinedType = impactProtectionDeviceType.PredefinedType; }
-		public IfcImpactProtectionDeviceType(DatabaseIfc db, string name, IfcImpactProtectionDeviceTypeSelect predefinedType)
+		public IfcImpactProtectionDeviceType(DatabaseIfc db, string name, IfcImpactProtectionDeviceTypeEnum predefinedType)
 			: base(db, name) { PredefinedType = predefinedType; }
 	}
-	[Serializable]
-	public partial class IfcInclinedReferenceSweptAreaSolid : IfcDirectrixDistanceSweptAreaSolid
+	[Serializable, VersionAdded(ReleaseVersion.IFC4X3)]
+	public partial class IfcImprovedGround : IfcEarthworksElement
 	{
-		private IfcLogicalEnum mFixedAxisVertical = IfcLogicalEnum.UNKNOWN; //: OPTIONAL IfcBoolean;
-		private IfcAxisLateralInclination mInclinating = null; //: IfcAxisLateralInclination;
+		private IfcImprovedGroundTypeEnum mPredefinedType = IfcImprovedGroundTypeEnum.NOTDEFINED; //: IfcImprovedGroundTypeEnum
+		public IfcImprovedGroundTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = validPredefinedType<IfcImprovedGroundTypeEnum>(value, mDatabase == null ? ReleaseVersion.IFC4X4_DRAFT : mDatabase.Release); } }
 
-		public IfcLogicalEnum FixedAxisVertical { get { return mFixedAxisVertical; } set { mFixedAxisVertical = value; } }
-		public IfcAxisLateralInclination Inclinating { get { return mInclinating; } set { mInclinating = value; } }
-
-		public IfcInclinedReferenceSweptAreaSolid() : base() { }
-		public IfcInclinedReferenceSweptAreaSolid(DatabaseIfc db, IfcInclinedReferenceSweptAreaSolid inclinedReferenceSweptAreaSolid, DuplicateOptions options) : base(db, inclinedReferenceSweptAreaSolid, options)
-		{
-			FixedAxisVertical = inclinedReferenceSweptAreaSolid.FixedAxisVertical;
-			Inclinating = inclinedReferenceSweptAreaSolid.Inclinating;
-		}
-		public IfcInclinedReferenceSweptAreaSolid(IfcProfileDef sweptArea, IfcCurve directrix, IfcAxisLateralInclination inclinating)
-			: base(sweptArea, directrix) { Inclinating = inclinating; }
+		public IfcImprovedGround() : base() { }
+		public IfcImprovedGround(DatabaseIfc db) : base(db) { }
+		public IfcImprovedGround(DatabaseIfc db, IfcImprovedGround ground, DuplicateOptions options) : base(db, ground, options) { PredefinedType = ground.PredefinedType; }
+		public IfcImprovedGround(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
 	}
 	[Serializable]
 	public partial class IfcIndexedColourMap : IfcPresentationItem
 	{
 		internal IfcTessellatedFaceSet mMappedTo;// : IfcTessellatedFaceSet; 
 		internal double mOpacity = double.NaN;// : OPTIONAL IfcNormalisedRatioMeasure;
-		internal int mColours;// : IfcColourRgbList; 
+		internal IfcColourRgbList mColours;// : IfcColourRgbList; 
 		internal List<int> mColourIndex = new List<int>();// : LIST [1:?] OF IfcPositiveInteger;
 
 		public IfcTessellatedFaceSet MappedTo { get { return mMappedTo; } set { mMappedTo = value; value.HasColours = this; } }
 		public double Opacity { get { return mOpacity; } set { mOpacity = value; } }
-		public IfcColourRgbList Colours { get { return mDatabase[mColours] as IfcColourRgbList; } set { mColours = value.mIndex; } }
+		public IfcColourRgbList Colours { get { return mColours; } set { mColours = value; } }
 
 		internal IfcIndexedColourMap() : base() { }
-		internal IfcIndexedColourMap(DatabaseIfc db, IfcIndexedColourMap m) : base(db, m) { MappedTo = db.Factory.Duplicate(m.MappedTo) as IfcTessellatedFaceSet; Colours = db.Factory.Duplicate(m.Colours) as IfcColourRgbList; mColourIndex.AddRange(m.mColourIndex); }
+		internal IfcIndexedColourMap(DatabaseIfc db, IfcIndexedColourMap m, DuplicateOptions options) : base(db, m, options) { MappedTo = db.Factory.Duplicate(m.MappedTo) as IfcTessellatedFaceSet; Colours = db.Factory.Duplicate(m.Colours) as IfcColourRgbList; mColourIndex.AddRange(m.mColourIndex); }
 		public IfcIndexedColourMap(IfcTessellatedFaceSet fs, IfcColourRgbList colours, IEnumerable<int> colourindex)
-			: base(fs.mDatabase) { MappedTo = fs; mColours = colours.mIndex; mColourIndex.AddRange(colourindex); }
+			: base(fs.mDatabase) { MappedTo = fs; mColours = colours; mColourIndex.AddRange(colourindex); }
 	}
 	[Serializable]
 	public partial class IfcIndexedPolyCurve : IfcBoundedCurve 
 	{
 		private IfcCartesianPointList mPoints; // IfcCartesianPointList
 		internal LIST<IfcSegmentIndexSelect> mSegments = new LIST<IfcSegmentIndexSelect>();// OPTIONAL LIST [1:?] OF IfcSegmentIndexSelect;
-		internal IfcLogicalEnum mSelfIntersect = IfcLogicalEnum.UNKNOWN;// Optional IfcBoolean
+		internal IfcLogicalEnum mSelfIntersect = IfcLogicalEnum.UNKNOWN;// IfcLogical
 
 		public IfcCartesianPointList Points { get { return mPoints; } set { mPoints = value; } }
 		public LIST<IfcSegmentIndexSelect> Segments { get { return mSegments; } }
@@ -109,9 +99,12 @@ namespace GeometryGym.Ifc
 		internal IfcIndexedPolyCurve() : base() { }
 		internal IfcIndexedPolyCurve(DatabaseIfc db, IfcIndexedPolyCurve c, DuplicateOptions options) : base(db, c, options) { Points = db.Factory.Duplicate(c.Points) as IfcCartesianPointList; mSegments.AddRange(c.mSegments); mSelfIntersect = c.mSelfIntersect; }
 		public IfcIndexedPolyCurve(IfcCartesianPointList pl) : base(pl.mDatabase) { Points = pl; }
-		public IfcIndexedPolyCurve(IfcCartesianPointList pl, IEnumerable<IfcSegmentIndexSelect> segs) : this(pl) { mSegments.AddRange(segs); }
-
-		internal void addSegment(IfcSegmentIndexSelect segment) { mSegments.Add(segment); }
+		public IfcIndexedPolyCurve(IfcCartesianPointList pl, IEnumerable<IfcSegmentIndexSelect> segments) 
+			: this(pl) { mSegments.AddRange(segments); }
+		public IfcIndexedPolyCurve(IfcCartesianPointList pl, params IfcSegmentIndexSelect[] segments) : this(pl)
+		{
+			mSegments.AddRange(segments);
+		}
 	}
 	[Serializable]
 	public partial class IfcIndexedPolygonalFace : IfcTessellatedItem //SUPERTYPE OF (ONEOF (IfcIndexedPolygonalFaceWithVoids))
@@ -119,9 +112,10 @@ namespace GeometryGym.Ifc
 		internal List<int> mCoordIndex = new List<int>();// : LIST [3:?] OF IfcPositiveInteger;
 		 //INVERSE
 		internal SET<IfcPolygonalFaceSet> mToFaceSet = new SET<IfcPolygonalFaceSet>();
-
+		internal IfcTextureCoordinateIndices mHasTexCoords = null;// : SET[0:1] OF IfcTextureCoordinateIndices FOR TexCoordsOf;
 		public List<int> CoordIndex { get { return mCoordIndex; } }
 		public SET<IfcPolygonalFaceSet> ToFaceSet { get { return mToFaceSet; } }
+		public IfcTextureCoordinateIndices HasTexCoords { get { return mHasTexCoords; } set { mHasTexCoords = value; } }
 
 		internal IfcIndexedPolygonalFace() : base() { }
 		internal IfcIndexedPolygonalFace(DatabaseIfc db, IfcIndexedPolygonalFace f, DuplicateOptions options) : base(db, f, options) { mCoordIndex.AddRange(f.mCoordIndex); }
@@ -142,7 +136,21 @@ namespace GeometryGym.Ifc
 			: base(db, coords) { mInnerCoordIndices.AddRange(inners); }
 	}
 	[Serializable]
-	public abstract partial class IfcIndexedTextureMap : IfcTextureCoordinate // ABSTRACT SUPERTYPE OF(IfcIndexedTriangleTextureMap)
+	public partial class IfcIndexedPolygonalTextureMap : IfcIndexedTextureMap
+	{
+		private LIST<IfcTextureCoordinateIndices> mTexCoordIndices = new LIST<IfcTextureCoordinateIndices>();// : SET [1:?] OF IfcTextureCoordinateIndices;
+		public LIST<IfcTextureCoordinateIndices> TexCoordIndices { get { return mTexCoordIndices; } set { mTexCoordIndices = value; } }
+
+		internal IfcIndexedPolygonalTextureMap() : base() { }
+		internal IfcIndexedPolygonalTextureMap(DatabaseIfc db) : base(db) { }
+		internal IfcIndexedPolygonalTextureMap(DatabaseIfc db, IfcIndexedPolygonalTextureMap m, DuplicateOptions options) : base(db, m, options)
+		{
+			foreach (IfcTextureCoordinateIndices i in m.mTexCoordIndices)
+				TexCoordIndices.Add(db.Factory.Duplicate(i) as IfcTextureCoordinateIndices);
+		}
+	}
+	[Serializable]
+	public abstract partial class IfcIndexedTextureMap : IfcTextureCoordinate // ABSTRACT SUPERTYPE OF(IfcIndexedPolygonalTextureMap, IfcIndexedTriangleTextureMap)
 	{
 		internal IfcTessellatedFaceSet mMappedTo;// : IfcTessellatedFaceSet;
 		internal IfcTextureVertexList mTexCoords;// : IfcTextureVertexList;
@@ -151,36 +159,51 @@ namespace GeometryGym.Ifc
 		public IfcTextureVertexList TexCoords { get { return mTexCoords; } set { mTexCoords = value; } }
 
 		protected IfcIndexedTextureMap() : base() { }
-		protected IfcIndexedTextureMap(DatabaseIfc db, IfcIndexedTextureMap m) : base(db, m) { MappedTo = db.Factory.Duplicate(m.MappedTo) as IfcTessellatedFaceSet; TexCoords = db.Factory.Duplicate(m.TexCoords) as IfcTextureVertexList; }
+		protected IfcIndexedTextureMap(DatabaseIfc db) : base(db) { }
+		protected IfcIndexedTextureMap(DatabaseIfc db, IfcIndexedTextureMap m, DuplicateOptions options) : base(db, m, options) { MappedTo = db.Factory.Duplicate(m.MappedTo) as IfcTessellatedFaceSet; TexCoords = db.Factory.Duplicate(m.TexCoords) as IfcTextureVertexList; }
 	}
 	[Serializable]
 	public partial class IfcIndexedTriangleTextureMap : IfcIndexedTextureMap
 	{
-		internal Tuple<int, int, int>[] mTexCoordList = new Tuple<int, int, int>[0];// : OPTIONAL LIST [1:?] OF LIST [3:3] OF IfcPositiveInteger;
+		internal List<Tuple<int, int, int>> mTexCoordList = new List<Tuple<int, int, int>>();// : OPTIONAL LIST [1:?] OF LIST [3:3] OF IfcPositiveInteger;
 
 		internal IfcIndexedTriangleTextureMap() : base() { }
-		internal IfcIndexedTriangleTextureMap(DatabaseIfc db, IfcIndexedTriangleTextureMap m) : base(db, m) { mTexCoordList = m.mTexCoordList; }
-		//public IfcIndexedTriangleTextureMap(DatabaseIfc m, IEnumerable<Tuple<int, int,int>> coords) : base(m) { mTexCoordList = coords.ToArray(); }
+		internal IfcIndexedTriangleTextureMap(DatabaseIfc db) : base(db) { }
+		internal IfcIndexedTriangleTextureMap(DatabaseIfc db, IfcIndexedTriangleTextureMap m, DuplicateOptions options) : base(db, m, options) { mTexCoordList = m.mTexCoordList; }
+	}
+	[Serializable, VersionAdded(ReleaseVersion.IFC4X4_DRAFT)]
+	public partial class IfcIntegerVoxelData : IfcVoxelData
+	{
+		internal int[] mValues = new int[0];// :	ARRAY [1:?] OF IfcInteger;
+		internal IfcUnit mUnit = null;// :	OPTIONAL IfcUnit;
+
+		public int[] Values { get { return mValues; } set { mValues = value; } }
+		public IfcUnit Unit { get { return mUnit; } set { mUnit = value; } }
+
+		internal IfcIntegerVoxelData() : base() { }
+		internal IfcIntegerVoxelData(DatabaseIfc db, IfcIntegerVoxelData d, DuplicateOptions options) : base(db, d, options) { mValues = d.mValues; if (d.Unit != null) Unit = db.Factory.Duplicate(d.Unit); }
+		public IfcIntegerVoxelData(IfcProduct host, IfcObjectPlacement placement, IfcProductDefinitionShape representation, int[] values)
+			: base(host, placement, representation) { Values = values; }
 	}
 	[Serializable]
 	public partial class IfcInterceptor : IfcFlowTreatmentDevice //IFC4  
 	{
-		internal IfcInterceptorTypeEnum mPredefinedType = IfcInterceptorTypeEnum.NOTDEFINED;
-		public IfcInterceptorTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
+		private IfcInterceptorTypeEnum mPredefinedType = IfcInterceptorTypeEnum.NOTDEFINED;
+		public IfcInterceptorTypeEnum PredefinedType { get { return mPredefinedType; }  set { mPredefinedType = validPredefinedType<IfcInterceptorTypeEnum>(value, mDatabase == null ? ReleaseVersion.IFC4X3 : mDatabase.Release); } }
 
 		internal IfcInterceptor() : base() { }
-		internal IfcInterceptor(DatabaseIfc db, IfcInterceptor i, DuplicateOptions options) : base(db, i, options) { mPredefinedType = i.mPredefinedType; }
+		internal IfcInterceptor(DatabaseIfc db, IfcInterceptor i, DuplicateOptions options) : base(db, i, options) { PredefinedType = i.PredefinedType; }
 		public IfcInterceptor(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation, IfcDistributionSystem system) : base(host, placement, representation, system) { }
 	}
 	[Serializable]
 	public partial class IfcInterceptorType : IfcFlowTreatmentDeviceType
 	{
-		internal IfcInterceptorTypeEnum mPredefinedType = IfcInterceptorTypeEnum.NOTDEFINED;// : IfcInterceptorTypeEnum;
-		public IfcInterceptorTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
+		private IfcInterceptorTypeEnum mPredefinedType = IfcInterceptorTypeEnum.NOTDEFINED;// : IfcInterceptorTypeEnum;
+		public IfcInterceptorTypeEnum PredefinedType { get { return mPredefinedType; }  set { mPredefinedType = validPredefinedType<IfcInterceptorTypeEnum>(value, mDatabase == null ? ReleaseVersion.IFC4X3 : mDatabase.Release); } }
 
 		internal IfcInterceptorType() : base() { }
-		internal IfcInterceptorType(DatabaseIfc db, IfcInterceptorType t, DuplicateOptions options) : base(db, t, options) { mPredefinedType = t.mPredefinedType; }
-		public IfcInterceptorType(DatabaseIfc db, string name, IfcInterceptorTypeEnum t) : base(db) { Name = name; mPredefinedType = t; }
+		internal IfcInterceptorType(DatabaseIfc db, IfcInterceptorType t, DuplicateOptions options) : base(db, t, options) { PredefinedType = t.PredefinedType; }
+		public IfcInterceptorType(DatabaseIfc db, string name, IfcInterceptorTypeEnum t) : base(db) { Name = name; PredefinedType = t; }
 	}
 	public interface IfcInterferenceSelect : IBaseClassIfc // SELECT(IfcSpatialElement, IfcElement);
 	{
@@ -198,37 +221,46 @@ namespace GeometryGym.Ifc
 	public partial class IfcInventory : IfcGroup
 	{
 		internal IfcInventoryTypeEnum mPredefinedType;// : IfcInventoryTypeEnum;
-		internal int mJurisdiction;// : IfcActorSelect;
-		internal List<int> mResponsiblePersons = new List<int>();// : SET [1:?] OF IfcPerson;
-		internal int mLastUpdateDate;// : IfcCalendarDate;
-		internal int mCurrentValue;// : OPTIONAL IfcCostValue;
-		internal int mOriginalValue;// : OPTIONAL IfcCostValue;
+		internal IfcActorSelect mJurisdiction;// : IfcActorSelect;
+		internal SET<IfcPerson> mResponsiblePersons = new SET<IfcPerson>();// : SET [1:?] OF IfcPerson;
+		internal DateTime mLastUpdateDate = DateTime.MinValue;// : IfcDate
+		internal IfcCalendarDate mLastUpdateDateSS;// : IfcCalendarDate;
+		internal IfcCostValue mCurrentValue;// : OPTIONAL IfcCostValue;
+		internal IfcCostValue mOriginalValue;// : OPTIONAL IfcCostValue;
 
-		public IfcInventoryTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
+		public IfcInventoryTypeEnum PredefinedType { get { return mPredefinedType; }  set { mPredefinedType = validPredefinedType<IfcInventoryTypeEnum>(value, mDatabase == null ? ReleaseVersion.IFC4X3 : mDatabase.Release); } }
+		public IfcActorSelect Jurisdiction { get { return mJurisdiction; } set { mJurisdiction = value; } }
+		public SET<IfcPerson> ResponsiblePersons { get { return mResponsiblePersons; } }
+		public DateTime LastUpdateDate { get { return mLastUpdateDate; } set { mLastUpdateDate = value; } }
+		public IfcCostValue CurrentValue { get { return mCurrentValue; } set { mCurrentValue = value; } }
+		public IfcCostValue OriginalValue { get { return mOriginalValue; } set { mOriginalValue = value; } }
+
 
 		internal IfcInventory() : base() { }
 		internal IfcInventory(DatabaseIfc db, IfcInventory i, DuplicateOptions options) : base(db, i, options)
 		{
-#warning todo
-			//mInventoryType = p.mInventoryType;
-			//mJurisdiction = p.mJurisdiction;
-			//mResponsiblePersons = new List<int>(p.mResponsiblePersons.ToArray());
-			//mLastUpdateDate = p.mLastUpdateDate;
-			//mCurrentValue = p.mCurrentValue;
-			//mOriginalValue = p.mOriginalValue;
+			PredefinedType = i.PredefinedType;
+			mJurisdiction = db.Factory.Duplicate(i.mJurisdiction, options);
+			mResponsiblePersons.AddRange(i.mResponsiblePersons.Select(x=>db.Factory.Duplicate(x, options)));
+			mLastUpdateDate = i.mLastUpdateDate;
+			if (mLastUpdateDateSS != null)
+				mLastUpdateDateSS = db.Factory.Duplicate(i.mLastUpdateDateSS, options);
+			if(i.mCurrentValue != null)
+				mCurrentValue = db.Factory.Duplicate(i.mCurrentValue, options);
+			if(i.mOriginalValue != null)
+				mOriginalValue = db.Factory.Duplicate(i.mOriginalValue, options);
 		}
-		internal IfcInventory(DatabaseIfc m, string name) : base(m, name) { }
+		public IfcInventory(DatabaseIfc db, string name) : base(db, name) { }
 	}
 	[Serializable]
 	public partial class IfcIrregularTimeSeries : IfcTimeSeries
 	{
 		private LIST<IfcIrregularTimeSeriesValue> mValues = new LIST<IfcIrregularTimeSeriesValue>(); //: LIST[1:?] OF IfcIrregularTimeSeriesValue;
-
 		public LIST<IfcIrregularTimeSeriesValue> Values { get { return mValues; } set { mValues = value; } }
 
 		public IfcIrregularTimeSeries() : base() { }
-		public IfcIrregularTimeSeries(string name, DateTime startTime, DateTime endTime, IfcTimeSeriesDataTypeEnum timeSeriesDataType, IfcDataOriginEnum dataOrigin, IEnumerable<IfcIrregularTimeSeriesValue> values)
-			: base(values.First().Database, name, startTime, endTime, timeSeriesDataType, dataOrigin)
+		public IfcIrregularTimeSeries(string name, IfcDateTimeSelect startTime, IfcDateTimeSelect endTime, IfcTimeSeriesDataTypeEnum timeSeriesDataType, IfcDataOriginEnum dataOrigin, IEnumerable<IfcIrregularTimeSeriesValue> values)
+			: base(name, startTime, endTime, timeSeriesDataType, dataOrigin)
 		{
 			Values.AddRange(values);
 		}

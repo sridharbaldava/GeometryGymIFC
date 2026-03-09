@@ -25,38 +25,48 @@ using System.ComponentModel;
 using System.Linq;
 using GeometryGym.STEP;
 
+#if (NET || !NOIFCJSON)
+#if (NEWTONSOFT)
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using JsonObject = Newtonsoft.Json.Linq.JObject;
+using JsonArray = Newtonsoft.Json.Linq.JArray;
+#else
+using System.Text.Json.Nodes;
+#endif
 
 namespace GeometryGym.Ifc
 {
-	public partial class IfcKerb : IfcBuiltElement
+	public partial class IfcKerb
 	{
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		internal override void parseJsonObject(JsonObject obj)
+		{
+			base.parseJsonObject(obj);
+			var node = obj["PredefinedType"];
+			if (node != null)
+				Enum.TryParse<IfcKerbTypeEnum>(node.GetValue<string>(), true, out mPredefinedType);
+		}
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
-			obj["Mountable"] = mMountable;
-		}
-		internal override void parseJObject(JObject obj)
-		{
-			base.parseJObject(obj);
-			JToken mountable = obj.GetValue("Mountable", StringComparison.InvariantCultureIgnoreCase);
-			if (mountable != null)
-				mMountable = mountable.Value<bool>();
+			if (mPredefinedType != IfcKerbTypeEnum.NOTDEFINED)
+				obj["PredefinedType"] = mPredefinedType.ToString();
 		}
 	}
-	public partial class IfcKerbType : IfcBuiltElementType
+	public partial class IfcKerbType
 	{
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		internal override void parseJsonObject(JsonObject obj)
+		{
+			base.parseJsonObject(obj);
+			var node = obj["PredefinedType"];
+			if (node != null)
+				Enum.TryParse<IfcKerbTypeEnum>(node.GetValue<string>(), true, out mPredefinedType);
+		}
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
-			obj["Mountable"] = mMountable;
-		}
-		internal override void parseJObject(JObject obj)
-		{
-			base.parseJObject(obj);
-			JToken mountable = obj.GetValue("Mountable", StringComparison.InvariantCultureIgnoreCase);
-			if (mountable != null)
-				mMountable = mountable.Value<bool>();
+			obj["PredefinedType"] = mPredefinedType.ToString();
 		}
 	}
 }
+#endif

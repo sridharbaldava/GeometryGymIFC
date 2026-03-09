@@ -18,10 +18,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Collections.Specialized;
 using System.Reflection;
-using System.IO;
-using System.ComponentModel;
 using System.Linq;
 using GeometryGym.STEP;
 
@@ -30,10 +28,10 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public partial class IfcHalfSpaceSolid : IfcGeometricRepresentationItem, IfcBooleanOperand /* SUPERTYPE OF (ONEOF (IfcBoxedHalfSpace ,IfcPolygonalBoundedHalfSpace)) */
 	{
-		private int mBaseSurface;// : IfcSurface;
+		private IfcSurface mBaseSurface;// : IfcSurface;
 		private bool mAgreementFlag;// : BOOLEAN;
 
-		public IfcSurface BaseSurface { get { return mDatabase[mBaseSurface] as IfcSurface; } set { mBaseSurface = value.mIndex; } }
+		public IfcSurface BaseSurface { get { return mBaseSurface; } set { mBaseSurface = value; } }
 		public bool AgreementFlag { get { return mAgreementFlag; } set { mAgreementFlag = value; } }
 
 		internal IfcHalfSpaceSolid() : base() { }
@@ -44,58 +42,41 @@ namespace GeometryGym.Ifc
 	[Serializable]
 	public partial class IfcHeatExchanger : IfcEnergyConversionDevice //IFC4
 	{
-		internal IfcHeatExchangerTypeEnum mPredefinedType = IfcHeatExchangerTypeEnum.NOTDEFINED;// OPTIONAL : IfcHeatExchangerTypeEnum;
-		public IfcHeatExchangerTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
+		private IfcHeatExchangerTypeEnum mPredefinedType = IfcHeatExchangerTypeEnum.NOTDEFINED;// OPTIONAL : IfcHeatExchangerTypeEnum;
+		public IfcHeatExchangerTypeEnum PredefinedType { get { return mPredefinedType; }  set { mPredefinedType = validPredefinedType<IfcHeatExchangerTypeEnum>(value, mDatabase == null ? ReleaseVersion.IFC4X3 : mDatabase.Release); } }
 
 		internal IfcHeatExchanger() : base() { }
-		internal IfcHeatExchanger(DatabaseIfc db, IfcHeatExchanger e, DuplicateOptions options) : base(db, e, options) { mPredefinedType = e.mPredefinedType; }
+		internal IfcHeatExchanger(DatabaseIfc db, IfcHeatExchanger e, DuplicateOptions options) : base(db, e, options) { PredefinedType = e.PredefinedType; }
 		public IfcHeatExchanger(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation, IfcDistributionSystem system) : base(host, placement, representation, system) { }
 	}
 	[Serializable]
 	public partial class IfcHeatExchangerType : IfcEnergyConversionDeviceType
 	{
-		internal IfcHeatExchangerTypeEnum mPredefinedType = IfcHeatExchangerTypeEnum.NOTDEFINED;// : IfcHeatExchangerTypeEnum;
-		public IfcHeatExchangerTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
+		private IfcHeatExchangerTypeEnum mPredefinedType = IfcHeatExchangerTypeEnum.NOTDEFINED;// : IfcHeatExchangerTypeEnum;
+		public IfcHeatExchangerTypeEnum PredefinedType { get { return mPredefinedType; }  set { mPredefinedType = validPredefinedType<IfcHeatExchangerTypeEnum>(value, mDatabase == null ? ReleaseVersion.IFC4X3 : mDatabase.Release); } }
 
 		internal IfcHeatExchangerType() : base() { }
-		internal IfcHeatExchangerType(DatabaseIfc db, IfcHeatExchangerType t, DuplicateOptions options) : base(db, t, options) { mPredefinedType = t.mPredefinedType; }
-		public IfcHeatExchangerType(DatabaseIfc m, string name, IfcHeatExchangerTypeEnum type) : base(m) { Name = name; mPredefinedType = type; }
-	}
-	[Serializable]
-	public partial class IfcHelmertCurve : IfcSpiral
-	{
-		private double mQuadraticTerm = 0; //: IfcLengthMeasure;
-		private double mLinearTerm = double.NaN; //: OPTIONAL IfcLengthMeasure;
-		private double mConstantTerm = double.NaN; //: OPTIONAL IfcReal;
-
-		public double QuadraticTerm { get { return mQuadraticTerm; } set { mQuadraticTerm = value; } }
-		public double LinearTerm { get { return mLinearTerm; } set { mLinearTerm = value; } }
-		public double ConstantTerm { get { return mConstantTerm; } set { mConstantTerm = value; } }
-
-		public IfcHelmertCurve() : base() { }
-		internal IfcHelmertCurve(DatabaseIfc db, IfcHelmertCurve curve, DuplicateOptions options)
-			: base(db, curve, options) { QuadraticTerm = curve.QuadraticTerm; LinearTerm = curve.LinearTerm; ConstantTerm = curve.ConstantTerm; }
-		public IfcHelmertCurve(IfcAxis2Placement position, double qubicTerm)
-			: base(position) { QuadraticTerm = qubicTerm; }
+		internal IfcHeatExchangerType(DatabaseIfc db, IfcHeatExchangerType t, DuplicateOptions options) : base(db, t, options) { PredefinedType = t.PredefinedType; }
+		public IfcHeatExchangerType(DatabaseIfc db, string name, IfcHeatExchangerTypeEnum type) : base(db) { Name = name; PredefinedType = type; }
 	}
 	[Serializable]
 	public partial class IfcHumidifier : IfcEnergyConversionDevice //IFC4
 	{
-		internal IfcHumidifierTypeEnum mPredefinedType = IfcHumidifierTypeEnum.NOTDEFINED;// OPTIONAL : IfcHumidifierTypeEnum;
-		public IfcHumidifierTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
+		private IfcHumidifierTypeEnum mPredefinedType = IfcHumidifierTypeEnum.NOTDEFINED;// OPTIONAL : IfcHumidifierTypeEnum;
+		public IfcHumidifierTypeEnum PredefinedType { get { return mPredefinedType; }  set { mPredefinedType = validPredefinedType<IfcHumidifierTypeEnum>(value, mDatabase == null ? ReleaseVersion.IFC4X3 : mDatabase.Release); } }
 
 		internal IfcHumidifier() : base() { }
-		internal IfcHumidifier(DatabaseIfc db, IfcHumidifier h, DuplicateOptions options) : base(db,h, options) { mPredefinedType = h.mPredefinedType; }
+		internal IfcHumidifier(DatabaseIfc db, IfcHumidifier h, DuplicateOptions options) : base(db,h, options) { PredefinedType = h.PredefinedType; }
 		public IfcHumidifier(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation, IfcDistributionSystem system) : base(host, placement, representation, system) { }
 	}
 	[Serializable]
 	public partial class IfcHumidifierType : IfcEnergyConversionDeviceType
 	{
-		internal IfcHumidifierTypeEnum mPredefinedType = IfcHumidifierTypeEnum.NOTDEFINED;// : IfcHumidifierExchangerEnum;
-		public IfcHumidifierTypeEnum PredefinedType { get { return mPredefinedType; } set { mPredefinedType = value; } }
+		private IfcHumidifierTypeEnum mPredefinedType = IfcHumidifierTypeEnum.NOTDEFINED;// : IfcHumidifierExchangerEnum;
+		public IfcHumidifierTypeEnum PredefinedType { get { return mPredefinedType; }  set { mPredefinedType = validPredefinedType<IfcHumidifierTypeEnum>(value, mDatabase == null ? ReleaseVersion.IFC4X3 : mDatabase.Release); } }
 		internal IfcHumidifierType() : base() { }
-		internal IfcHumidifierType(DatabaseIfc db, IfcHumidifierType t, DuplicateOptions options) : base(db, t, options) { mPredefinedType = t.mPredefinedType; }
-		public IfcHumidifierType(DatabaseIfc m, string name, IfcHumidifierTypeEnum type) : base(m) { Name = name; mPredefinedType = type; }
+		internal IfcHumidifierType(DatabaseIfc db, IfcHumidifierType t, DuplicateOptions options) : base(db, t, options) { PredefinedType = t.PredefinedType; }
+		public IfcHumidifierType(DatabaseIfc db, string name, IfcHumidifierTypeEnum type) : base(db) { Name = name; PredefinedType = type; }
 	}
 	[Obsolete("DEPRECATED IFC4", false)]
 	[Serializable]

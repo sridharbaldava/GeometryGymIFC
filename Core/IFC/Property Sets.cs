@@ -83,6 +83,28 @@ namespace GeometryGym.Ifc
 		public Pset_ActuatorTypeRotationalActuation(IfcActuator instance) : base(instance) { }
 		public Pset_ActuatorTypeRotationalActuation(IfcActuatorType type) : base(type) { }
 	}
+	public partial class Pset_Address : IfcPropertySet
+	{
+		public IfcAddressTypeEnum Purpose { set { AddProperty(new IfcPropertyEnumeratedValue(mDatabase, "Purpose", new IfcLabel(value.ToString()))); } }
+		public string AddressDescription { set { AddProperty(new IfcPropertySingleValue(mDatabase, "Description", new IfcText(value))); } }
+		public string UserDefinedPurpose { set { AddProperty(new IfcPropertySingleValue(mDatabase, "UserDefinedPurpose", new IfcLabel(value))); } }
+		public string InternalLocation { set { AddProperty(new IfcPropertySingleValue(mDatabase, "InternalLocation", new IfcLabel(value))); } }
+		public IfcPropertyListValue<IfcLabel> AddressLines { set { value.Name = "AddressLines"; addProperty(value); } }
+		public string PostalBox { set { AddProperty(new IfcPropertySingleValue(mDatabase, "PostalBox", new IfcLabel(value))); } }
+		public string Town { set { AddProperty(new IfcPropertySingleValue(mDatabase, "Town", new IfcLabel(value))); } }
+		public string Region { set { AddProperty(new IfcPropertySingleValue(mDatabase, "Region", new IfcLabel(value))); } }
+		public string PostalCode { set { AddProperty(new IfcPropertySingleValue(mDatabase, "PostalCode", new IfcLabel(value))); } }
+		public string Country { set { AddProperty(new IfcPropertySingleValue(mDatabase, "Country", new IfcLabel(value))); } }
+		public IfcPropertyListValue<IfcLabel> TelephoneNumbers { set { value.Name = "TelephoneNumbers"; addProperty(value); } }
+		public IfcPropertyListValue<IfcLabel> FacsimileNumbers { set { value.Name = "FacsimileNumbers"; addProperty(value); } }
+		public string PagerNumber { set { AddProperty(new IfcPropertySingleValue(mDatabase, "PagerNumber", new IfcLabel(value))); } }
+		public IfcPropertyListValue<IfcLabel> ElectronicMailAddresses { set { value.Name = "ElectronicMailAddresses"; addProperty(value); } }
+		public string WWWHomePageURL { set { AddProperty(new IfcPropertySingleValue(mDatabase, "WWWHomePageURL", new IfcURIReference(value))); } }
+		public IfcPropertyListValue<IfcURIReference> MessagingIDs { set { value.Name = "MessagingIDs"; addProperty(value); } }
+		public Pset_Address(IfcBuilding instance) : base(instance) { }
+		public Pset_Address(IfcActor instance) : base(instance) { }
+		public Pset_Address(IfcSite instance) : base(instance) { }
+	}
 	public partial class Pset_AirSideSystemInformation : IfcPropertySet
 	{
 		public string Name { set { AddProperty(new IfcPropertySingleValue(mDatabase, "Name", new IfcLabel(value))); } }
@@ -444,12 +466,12 @@ namespace GeometryGym.Ifc
 		public string PlanningControlStatus { set { AddProperty(new IfcPropertySingleValue(mDatabase, "PlanningControlStatus", new IfcLabel(value))); } }
 		public string NarrativeText { set { AddProperty(new IfcPropertySingleValue(mDatabase, "NarrativeText", new IfcText(value))); } }
 		public double VacancyRateInCategoryNow { set { AddProperty(new IfcPropertySingleValue(mDatabase, "VacancyRateInCategoryNow", new IfcPositiveRatioMeasure(value))); } }
-		public IfcPropertyListValue<IfcLabel> TenureModesAvailableNow { set { value.Name = "TenureModesAvailableNow"; addProperty(value); } }
-		public IfcPropertyListValue<IfcLabel> MarketSubCategoriesAvailableNow { set { value.Name = "MarketSubCategoriesAvailableNow"; addProperty(value); } }
+		public IfcPropertyListValue<IfcLabel> TenureModesavailableNow { set { value.Name = "TenureModesavailableNow"; addProperty(value); } }
+		public IfcPropertyListValue<IfcLabel> MarketSubCategoriesavailableNow { set { value.Name = "MarketSubCategoriesavailableNow"; addProperty(value); } }
 		public IfcPropertyBoundedValue<IfcMonetaryMeasure> RentalRatesInCategoryNow { set { value.Name = "RentalRatesInCategoryNow"; addProperty(value); } }
 		public double VacancyRateInCategoryFuture { set { AddProperty(new IfcPropertySingleValue(mDatabase, "VacancyRateInCategoryFuture", new IfcPositiveRatioMeasure(value))); } }
-		public IfcPropertyListValue<IfcLabel> TenureModesAvailableFuture { set { value.Name = "TenureModesAvailableFuture"; addProperty(value); } }
-		public IfcPropertyListValue<IfcLabel> MarketSubCategoriesAvailableFuture { set { value.Name = "MarketSubCategoriesAvailableFuture"; addProperty(value); } }
+		public IfcPropertyListValue<IfcLabel> TenureModesavailableFuture { set { value.Name = "TenureModesavailableFuture"; addProperty(value); } }
+		public IfcPropertyListValue<IfcLabel> MarketSubCategoriesavailableFuture { set { value.Name = "MarketSubCategoriesavailableFuture"; addProperty(value); } }
 		public IfcPropertyBoundedValue<IfcMonetaryMeasure> RentalRatesInCategoryFuture { set { value.Name = "RentalRatesInCategoryFuture"; addProperty(value); } }
 		public Pset_BuildingUse(IfcBuilding instance) : base(instance) { }
 	}
@@ -577,6 +599,14 @@ namespace GeometryGym.Ifc
 		public string AssessmentCondition { set { AddProperty(new IfcPropertySingleValue(mDatabase, "AssessmentCondition", new IfcLabel(value))); } }
 		public string AssessmentDescription { set { AddProperty(new IfcPropertySingleValue(mDatabase, "AssessmentDescription", new IfcText(value))); } }
 		public Pset_Condition(IfcElement instance) : base(instance) { }
+	}
+	public partial class Pset_ConstructionOccurence : IfcPropertySet
+	{
+		public DateTime InstallationDate { set { AddProperty(new IfcPropertySingleValue(mDatabase, "InstallationDate", new IfcDate(value))); } }
+		public string ModelNumber { set { AddProperty(new IfcPropertySingleValue(mDatabase, "ModelNumber", new IfcLabel(value))); } }
+		public string TagNumber { set { AddProperty(new IfcPropertySingleValue(mDatabase, "TagNumber", new IfcLabel(value))); } }
+		public string AssetIdentifier { set { AddProperty(new IfcPropertySingleValue(mDatabase, "AssetIdentifier", new IfcLabel(value))); } }
+		public Pset_ConstructionOccurence(IfcElement instance) : base(instance) { }
 	}
 	//Pset_ConstructionResource
 	//Pset_ControllerPHistory
@@ -778,7 +808,23 @@ namespace GeometryGym.Ifc
 	//Pset_FlowMeterTypeGasMeter
 	//Pset_FlowMeterTypeOilMeter
 	//Pset_FlowMeterTypeWaterMeter
-	//Pset_FootingCommon
+	public partial class Pset_FootingCommon : IfcPropertySet
+	{
+		public string Reference { set { AddProperty(new IfcPropertySingleValue(mDatabase, "Reference", new IfcIdentifier(value))); } }
+		public PEnum_Status Status { set { AddProperty(new IfcPropertyEnumeratedValue(mDatabase, "Status", new IfcLabel(value.ToString()))); } }
+		public bool LoadBearing { set { AddProperty(new IfcPropertySingleValue(mDatabase, "LoadBearing", new IfcBoolean(value))); } }
+
+		public Pset_FootingCommon(IfcFooting instance) : base(instance) { }
+		public Pset_FootingCommon(IfcFootingType type) : base(type) { }
+	}
+	public partial class Pset_FootingTypePadFooting : IfcPropertySet
+	{
+		public double LoadBearingCapacity { set { AddProperty(new IfcPropertySingleValue(mDatabase, "LoadBearingCapacity", new IfcPlanarForceMeasure(value))); } }
+		public bool IsReinforced { set { AddProperty(new IfcPropertySingleValue(mDatabase, "IsReinforced", new IfcBoolean(value))); } }
+
+		public Pset_FootingTypePadFooting(IfcFooting instance) : base(instance) { }
+		public Pset_FootingTypePadFooting(IfcFootingType type) : base(type) { }
+	}
 	//Pset_FurnitureTypeChair
 	//Pset_FurnitureTypeCommon
 	//Pset_FurnitureTypeDesk
@@ -909,7 +955,7 @@ namespace GeometryGym.Ifc
 		public int Plies { set { AddProperty(new IfcPropertySingleValue(mDatabase, "Plies", new IfcInteger(value))); } }
 		public double MoistureContent { set { AddProperty(new IfcPropertySingleValue(mDatabase, "MoistureContent", new IfcPositiveRatioMeasure(value))); } }
 		public double DimensionalChangeCoefficient { set { AddProperty(new IfcPropertySingleValue(mDatabase, "DimensionalChangeCoefficient", new IfcPositiveRatioMeasure(value))); } }
-		public double ThicknessSwelling { set { AddProperty(new IfcPropertySingleValue(mDatabase, "ThicknessSwelling	", new IfcPositiveRatioMeasure(value))); } }
+		public double ThicknessSwelling { set { AddProperty(new IfcPropertySingleValue(mDatabase, "ThicknessSwelling", new IfcPositiveRatioMeasure(value))); } }
 		public Pset_MaterialWood(IfcMaterialDefinition material) : base(material) { }
 	}
 	public partial class Pset_MaterialWoodBasedBeam : IfcMaterialProperties
@@ -944,7 +990,15 @@ namespace GeometryGym.Ifc
 	//Pset_OutsideDesignCriteria
 	//Pset_PackingInstructions
 	//Pset_Permit
-	//Pset_PileCommon
+	public partial class Pset_PileCommon : IfcPropertySet
+	{
+		public string Reference { set { AddProperty(new IfcPropertySingleValue(mDatabase, "Reference", new IfcIdentifier(value))); } }
+		public PEnum_Status Status { set { AddProperty(new IfcPropertyEnumeratedValue(mDatabase, "Status", new IfcLabel(value.ToString()))); } }
+		public bool LoadBearing { set { AddProperty(new IfcPropertySingleValue(mDatabase, "LoadBearing", new IfcBoolean(value))); } }
+
+		public Pset_PileCommon(IfcPile instance) : base(instance) { }
+		public Pset_PileCommon(IfcPileType type) : base(type) { }
+	}
 	//Pset_PipeConnectionFlanged
 	public partial class Pset_PipeFittingOccurrence : IfcPropertySet
 	{
@@ -1261,7 +1315,18 @@ namespace GeometryGym.Ifc
 		public Pset_ReinforcementBarPitchOfWall(IfcWallType type) : base(type) { }
 	}
 	//Pset_Risk
-	//Pset_RoofCommon
+	public partial class Pset_RoofCommon : IfcPropertySet
+	{
+		public string Reference { set { AddProperty(new IfcPropertySingleValue(mDatabase, "Reference", new IfcIdentifier(value))); } }
+		public PEnum_Status Status { set { AddProperty(new IfcPropertyEnumeratedValue(mDatabase, "Status", new IfcLabel(value.ToString()))); } }
+		public string AcousticRating { set { AddProperty(new IfcPropertySingleValue(mDatabase, "AcousticRating", new IfcLabel(value))); } }
+		public bool IsExternal { set { AddProperty(new IfcPropertySingleValue(mDatabase, "IsExternal", new IfcBoolean(value))); } }
+		public double ThermalTransmittance { set { AddProperty(new IfcPropertySingleValue(mDatabase, "ThermalTransmittance", new IfcThermalTransmittanceMeasure(value))); } }
+		public string FireRating { set { AddProperty(new IfcPropertySingleValue(mDatabase, "FireRating", new IfcLabel(value))); } }
+		public bool LoadBearing { set { AddProperty(new IfcPropertySingleValue(mDatabase, "LoadBearing", new IfcBoolean(value))); } }
+		public Pset_RoofCommon(IfcRoof instance) : base(instance) { }
+		public Pset_RoofCommon(IfcRoofType type) : base(type) { }
+	}
 	//Pset_SanitaryTerminalTypeBath
 	//Pset_SanitaryTerminalTypeBidet
 	//Pset_SanitaryTerminalTypeCistern
@@ -1403,7 +1468,6 @@ namespace GeometryGym.Ifc
 	//Pset_SpaceThermalLoad
 	//Pset_SpaceThermalLoadPHistory
 	//Pset_SpaceThermalPHistory
-	//
 	public partial class Pset_SpaceThermalRequirements : IfcPropertySet
 	{
 		public double SpaceTemperature { set { AddProperty(new IfcPropertySingleValue(mDatabase, "SpaceTemperature", new IfcThermodynamicTemperatureMeasure(value))); } }
@@ -1431,6 +1495,13 @@ namespace GeometryGym.Ifc
 		public Pset_SpaceThermalRequirements(IfcZone instance) : base(instance) { }
 	}
 	//Pset_SpatialZoneCommon
+	public partial class Pset_Stationing : IfcPropertySet
+	{
+		public double IncomingStation { set { AddProperty(new IfcPropertySingleValue(mDatabase, "IncomingStation", new IfcLengthMeasure(value))); } }
+		public double Station { set { AddProperty(new IfcPropertySingleValue(mDatabase, "Station", new IfcLengthMeasure(value))); } }
+		public bool HasIncreasingStation { set { AddProperty(new IfcPropertySingleValue(mDatabase, "HasIncreasingStation", new IfcBoolean(value))); } }
+		public Pset_Stationing(IfcReferent instance) : base(instance) { }
+	}
 	//Pset_StackTerminalTypeCommon
 	//Pset_StairCommon
 	//Pset_StairFlightCommon

@@ -29,7 +29,7 @@ using GeometryGym.STEP;
 
 namespace GeometryGym.Ifc
 {
-	public partial class IfcValve : IfcFlowController //IFC4
+	public partial class IfcValve
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + (release< ReleaseVersion.IFC4 ? "" : (mPredefinedType == IfcValveTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + ".")); }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary)
@@ -37,10 +37,10 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcValveTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcValveTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
-	public partial class IfcValveType : IfcFlowControllerType
+	public partial class IfcValveType
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + ",." + mPredefinedType.ToString() + "."; }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary)
@@ -48,80 +48,126 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcValveTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcValveTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
-	public partial class IfcVector : IfcGeometricRepresentationItem
+	public partial class IfcVector
 	{
-		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + "," + ParserSTEP.LinkToString(mOrientation) + "," + ParserSTEP.DoubleToString(mMagnitude); }
+		protected override string BuildStringSTEP(ReleaseVersion release) { return "#" + mOrientation.StepId + "," + ParserSTEP.DoubleToString(mMagnitude); }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary)
 		{
-			mOrientation = ParserSTEP.StripLink(str, ref pos, len);
+			mOrientation = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcDirection;
 			mMagnitude = ParserSTEP.StripDouble(str, ref pos, len);
 		}
 	}
-	public partial class IfcVertex : IfcTopologicalRepresentationItem //SUPERTYPE OF(IfcVertexPoint)
-	{
-		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary) { }
-	}
-	public partial class IfcVertexBasedTextureMap : BaseClassIfc // DEPRECATED IFC4
+	public partial class IfcVectorVoxelData
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
-			string str = base.BuildStringSTEP(release) + ",(" + ParserSTEP.LinkToString(mTextureVertices[0]);
-			for (int icounter = 1; icounter < mTextureVertices.Count; icounter++)
-				str += "," + ParserSTEP.LinkToString(mTextureVertices[icounter]);
-			str += "),(" + ParserSTEP.LinkToString(mTexturePoints[0]);
-			for (int icounter = 1; icounter < mTexturePoints.Count; icounter++)
-				str += "," + ParserSTEP.LinkToString(mTexturePoints[icounter]);
-			return str;
+			return base.BuildStringSTEP(release) + ",(" +
+				string.Join(",", mValues.Select(x => "#" + x.StepId)) + (mUnit == null ? "),$" : "),#" + mUnit.StepId);
+		}
+		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
+		{
+			base.parse(str, ref pos, release, len, dictionary);
+			string s = ParserSTEP.StripField(str, ref pos, len);
+			List<string> arrNodes = ParserSTEP.SplitLineFields(s.Substring(1, s.Length - 2));
+			mValues = arrNodes.ConvertAll(x => dictionary[ParserSTEP.ParseLink(x)] as IfcVector).ToArray();
+			mUnit = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcUnit;
+		}
+	}
+	public partial class IfcVehicle
+	{
+		protected override string BuildStringSTEP(ReleaseVersion release)
+		{
+			return base.BuildStringSTEP(release) +
+				(mPredefinedType == IfcVehicleTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + ".");
+		}
+		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
+		{
+			base.parse(str, ref pos, release, len, dictionary);
+			string s = ParserSTEP.StripField(str, ref pos, len);
+			if (s.StartsWith("."))
+				Enum.TryParse<IfcVehicleTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
+		}
+	}
+	public partial class IfcVehicleType
+	{
+		protected override string BuildStringSTEP(ReleaseVersion release)
+		{
+			return base.BuildStringSTEP(release) + "," + mPredefinedType.ToString();
+		}
+		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
+		{
+			base.parse(str, ref pos, release, len, dictionary);
+			string s = ParserSTEP.StripField(str, ref pos, len);
+			if (s.StartsWith("."))
+				Enum.TryParse<IfcVehicleTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
+		}
+	}
+	public partial class IfcVertex
+	{
+		protected override string BuildStringSTEP(ReleaseVersion release) { return ""; }
+		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary) { }
+	}
+	public partial class IfcVertexBasedTextureMap
+	{
+		protected override string BuildStringSTEP(ReleaseVersion release)
+		{
+			return "(" + string.Join(",", mTextureVertices.Select(x => "#" + x.StepId)) + "),(" +
+				string.Join(",", mTexturePoints.Select(x => "#" + x.StepId)) + ")";
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary)
 		{
-			mTextureVertices = ParserSTEP.StripListLink(str, ref pos, len);
-			mTexturePoints = ParserSTEP.StripListLink(str, ref pos, len);
+			mTextureVertices.AddRange(ParserSTEP.StripListLink(str, ref pos, len).Select(x=>dictionary[x] as IfcTextureVertex));
+			mTexturePoints.AddRange(ParserSTEP.StripListLink(str, ref pos, len).Select(x=>dictionary[x] as IfcCartesianPoint));
 		}
 	}
-	public partial class IfcVertexLoop : IfcLoop
+	public partial class IfcVertexLoop
 	{
-		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + "," + ParserSTEP.LinkToString(mLoopVertex); }
-		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary) { mLoopVertex = ParserSTEP.StripLink(str, ref pos, str.Length); }
-	}
-	public partial class IfcVertexPoint : IfcVertex, IfcPointOrVertexPoint
-	{
-		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + "," + ParserSTEP.LinkToString(mVertexGeometry); }
-		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary) { mVertexGeometry = ParserSTEP.StripLink(str, ref pos, str.Length); }
-	}
-	public partial class IfcVibrationDamper : IfcElementComponent
-	{
-		protected override string BuildStringSTEP()
+		protected override string BuildStringSTEP(ReleaseVersion release) { return "#" + mLoopVertex.StepId; }
+		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary) 
 		{
-			return base.BuildStringSTEP() + (mPredefinedType == IfcVibrationDamperTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + ".");
+			mLoopVertex = dictionary[ParserSTEP.StripLink(str, ref pos, str.Length)] as IfcVertex;
+		}
+	}
+	public partial class IfcVertexPoint
+	{
+		protected override string BuildStringSTEP(ReleaseVersion release) { return "#" + mVertexGeometry.StepId; }
+		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary) 
+		{ 
+			VertexGeometry = dictionary[ParserSTEP.StripLink(str, ref pos, str.Length)] as IfcPoint;
+		}
+	}
+	public partial class IfcVibrationDamper
+	{
+		protected override string BuildStringSTEP(ReleaseVersion release)
+		{
+			return base.BuildStringSTEP(release) + (mPredefinedType == IfcVibrationDamperTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + ".");
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcVibrationDamperTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcVibrationDamperTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
-	public partial class IfcVibrationDamperType : IfcElementComponentType
+	public partial class IfcVibrationDamperType
 	{
-		protected override string BuildStringSTEP()
+		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
-			return base.BuildStringSTEP() +
-			(mPredefinedType == IfcVibrationDamperTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + ".");
+			return base.BuildStringSTEP(release) + ",." + mPredefinedType.ToString() + ".";
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcVibrationDamperTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcVibrationDamperTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
-	public partial class IfcVibrationIsolator : IfcElementComponent
+	public partial class IfcVibrationIsolator
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + (release< ReleaseVersion.IFC4 ? "" : (mPredefinedType == IfcVibrationIsolatorTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType + ".")); }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary)
@@ -129,10 +175,10 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcVibrationIsolatorTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcVibrationIsolatorTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
-	public partial class IfcVibrationIsolatorType : IfcElementComponentType
+	public partial class IfcVibrationIsolatorType
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + ",." + mPredefinedType.ToString() + "."; }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary)
@@ -140,46 +186,39 @@ namespace GeometryGym.Ifc
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcVibrationIsolatorTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcVibrationIsolatorTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
-	public partial class IfcVienneseBend
+	public partial class IfcVirtualElement
 	{
-		protected override string BuildStringSTEP(ReleaseVersion release)
-		{
-			return base.BuildStringSTEP(release) + ParserSTEP.DoubleToString(mStartCurvature) + "," + ParserSTEP.DoubleToString(mEndCurvature) + "," + 
-				ParserSTEP.DoubleToString(mGravityCenterHeight) + "," + ParserSTEP.DoubleToString(mSegmentLength);
-		}
+		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + (release < ReleaseVersion.IFC4 ? "" : (mPredefinedType == IfcVirtualElementTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType + ".")); }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
-			StartCurvature = ParserSTEP.StripDouble(str, ref pos, len);
-			EndCurvature = ParserSTEP.StripDouble(str, ref pos, len);
-			GravityCenterHeight = ParserSTEP.StripDouble(str, ref pos, len);
-			SegmentLength = ParserSTEP.StripDouble(str, ref pos, len);
+			base.parse(str, ref pos, release, len, dictionary);
+			string s = ParserSTEP.StripField(str, ref pos, len);
+			if (s.StartsWith("."))
+				Enum.TryParse<IfcVirtualElementTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
-	public partial class IfcVirtualGridIntersection : BaseClassIfc
+	public partial class IfcVirtualGridIntersection
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
-			string str = base.BuildStringSTEP(release) + ",(#" + mIntersectingAxes.Item1 + ",#" + mIntersectingAxes.Item2 + "),(";
-			str += ParserSTEP.DoubleToString(mOffsetDistances.Item1) + "," + ParserSTEP.DoubleToString(mOffsetDistances.Item2);
-			if (!double.IsNaN(mOffsetDistances.Item3))
-				str += "," + ParserSTEP.DoubleToString(mOffsetDistances.Item3);
-			str += ")";
-			return str;
+			return "(#" + mIntersectingAxes.Item1.StepId + ",#" + mIntersectingAxes.Item2.StepId + "),(" +
+				ParserSTEP.DoubleToString(mOffsetDistances.Item1) + "," + ParserSTEP.DoubleToString(mOffsetDistances.Item2) +
+				(!double.IsNaN(mOffsetDistances.Item3) ? "," + ParserSTEP.DoubleToString(mOffsetDistances.Item3) : "") + ")";
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary)
 		{
 			List<int> links = ParserSTEP.StripListLink(str, ref pos, len);
-			mIntersectingAxes = new Tuple<int, int>(links[0], links[1]);
+			mIntersectingAxes = new Tuple<IfcGridAxis, IfcGridAxis>(dictionary[links[0]] as IfcGridAxis, dictionary[links[1]] as IfcGridAxis);
 			List<string> lst = ParserSTEP.SplitLineFields(ParserSTEP.StripField(str,ref pos, len));
 			mOffsetDistances = new Tuple<double, double, double>(ParserSTEP.ParseDouble(lst[0]), ParserSTEP.ParseDouble(lst[1]), (lst.Count > 2 ? ParserSTEP.ParseDouble(lst[2]) : double.NaN));
 		}
 	}
-	public partial class IfcVoidingFeature : IfcFeatureElementSubtraction //IFC4
+	public partial class IfcVoidingFeature
 	{
-		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + (release< ReleaseVersion.IFC4 ? "" : ",." + mPredefinedType + "."); }
+		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + (release< ReleaseVersion.IFC4 ? "" : (mPredefinedType == IfcVoidingFeatureTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType + ".")); }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
@@ -187,8 +226,38 @@ namespace GeometryGym.Ifc
 			{
 				string s = ParserSTEP.StripField(str, ref pos, len);
 				if (s.StartsWith("."))
-					Enum.TryParse<IfcVoidingFeatureTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+					Enum.TryParse<IfcVoidingFeatureTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 			}
+		}
+	}
+	public partial class IfcVoxelData
+	{
+		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + (string.IsNullOrEmpty(mValueType) ?  ",$" : ",'" + ParserSTEP.Encode(mValueType) + "'"); }
+		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
+		{
+			base.parse(str, ref pos, release, len, dictionary);
+			mValueType = ParserSTEP.Decode(ParserSTEP.StripString(str, ref pos, len));
+		}
+	}
+	public partial class IfcVoxelGrid
+	{
+		protected override string BuildStringSTEP(ReleaseVersion release)
+		{
+			return ParserSTEP.DoubleToString(mVoxelSizeX) + "," + ParserSTEP.DoubleOptionalToString(mVoxelSizeY) + "," +
+				ParserSTEP.DoubleOptionalToString(mVoxelSizeZ) + "," + mNumberOfVoxelsX + "," + ParserSTEP.IntOptionalToString(mNumberOfVoxelsY) + ',' +
+				ParserSTEP.IntOptionalToString(mNumberOfVoxelsZ) + ",(" + String.Join(",", mVoxels.Select(x => ParserSTEP.BoolToString(x))) + ")";
+		}
+		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
+		{
+			mVoxelSizeX = ParserSTEP.StripDouble(str, ref pos, len);
+			mVoxelSizeY = ParserSTEP.StripDouble(str, ref pos, len);
+			mVoxelSizeZ = ParserSTEP.StripDouble(str, ref pos, len);
+			mNumberOfVoxelsX = ParserSTEP.StripInt(str, ref pos, len);
+			mNumberOfVoxelsY = ParserSTEP.StripInt(str, ref pos, len);
+			mNumberOfVoxelsZ = ParserSTEP.StripInt(str, ref pos, len);
+			string s = ParserSTEP.StripField(str, ref pos, len);
+			List<string> arrNodes = ParserSTEP.SplitLineFields(s.Substring(1, s.Length - 2));
+			mVoxels.AddRange(arrNodes.ConvertAll(x => ParserSTEP.ParseBool(x)));
 		}
 	}
 }

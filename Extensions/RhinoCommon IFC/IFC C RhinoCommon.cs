@@ -28,13 +28,13 @@ using Rhino.Geometry;
 
 namespace GeometryGym.Ifc
 {
-	public partial class IfcCartesianPoint : IfcPoint
+	public partial class IfcCartesianPoint
 	{
 		public override Point3d Location { get { return new Point3d(mCoordinateX, double.IsNaN( mCoordinateY) ? 0 : mCoordinateY, double.IsNaN(mCoordinateZ) ? 0 : mCoordinateZ); } }
 		public Point2d Location2d() { return new Point2d(mCoordinateX, double.IsNaN( mCoordinateY) ? 0 : mCoordinateY); }
 		internal Point3d Coordinates3d { set { mCoordinateX = value.X; mCoordinateY = value.Y; mCoordinateZ = value.Z; } }
 		internal Point2d Coordinates2d { set { mCoordinateX = value.X; mCoordinateY = value.Y; mCoordinateZ = double.NaN; } }
-		internal IfcCartesianPoint(DatabaseIfc m, Point3d pt) : base(m) { Coordinates3d = pt; }
+		internal IfcCartesianPoint(DatabaseIfc db, Point3d pt) : base(db) { Coordinates3d = pt; }
 		internal void adopt(Point3d pt)
 		{
 			if (this.is2D)
@@ -42,88 +42,121 @@ namespace GeometryGym.Ifc
 			else
 				Coordinates3d = pt;
 		}
-		internal IfcCartesianPoint(DatabaseIfc m, Point2d pt) : base(m) { Coordinates2d = pt; }
+		internal IfcCartesianPoint(DatabaseIfc db, Point2d pt) : base(db) { Coordinates2d = pt; }
 	}
-	public abstract partial class IfcCartesianPointList : IfcGeometricRepresentationItem //IFC4
+	public partial class IfcCartesianPointList
 	{
 		public abstract List<Point3d> Points();
 	}
-	public partial class IfcCartesianPointList2D : IfcCartesianPointList //IFC4
+	public partial class IfcCartesianPointList2D
 	{
 		public IfcCartesianPointList2D(DatabaseIfc db, IEnumerable<Point2d> coordList) : base(db)
 		{
-			mCoordList = coordList.Select(x => new double[] { x.X, x.Y }).ToArray();
+			mCoordList.AddRange(coordList.Select(x => new Tuple<double, double>(x.X, x.Y)));
 		}
-		public override List<Point3d> Points() { return mCoordList.ToList().ConvertAll(x => new Point3d(x[0], x[1], 0)); }
+		public override List<Point3d> Points() { return mCoordList.Select(x => new Point3d(x.Item1, x.Item2, 0)).ToList(); }
 	}
-	public partial class IfcCartesianPointList3D : IfcCartesianPointList //IFC4
+	public partial class IfcCartesianPointList3D
 	{
-		public IfcCartesianPointList3D(DatabaseIfc db, IEnumerable<Point3d> coordList) : base(db) { mCoordList = coordList.Select(x=> new double[] { x.X, x.Y, x.Z }).ToArray(); }
-		public override List<Point3d> Points() { return mCoordList.Select(x => new Point3d(x[0], x[1], x[2])).ToList(); } 
+		public IfcCartesianPointList3D(DatabaseIfc db, IEnumerable<Point3d> coordList) : base(db) 
+		{
+			mCoordList.AddRange(coordList.Select(x=> new Tuple<double, double, double>(x.X, x.Y, x.Z))); }
+		public override List<Point3d> Points() { return mCoordList.Select(x => new Point3d(x.Item1, x.Item2, x.Item3)).ToList(); } 
 	}
-	public abstract partial class IfcCartesianTransformationOperator
+	public partial class IfcCartesianTransformationOperator
 	{
 		public Transform Transform()
 		{
 			IfcCartesianPoint cp = LocalOrigin;
 			Point3d p = (cp == null ? Point3d.Origin : cp.Location);
-			return Rhino.Geometry.Transform.Translation(p.X, p.Y, p.Z) * vecsTransform() * getScaleTransform(p);
+			Transform translation = Rhino.Geometry.Transform.Translation(p.X, p.Y, p.Z);
+			Transform changeBasis = vecsTransform();
+			Transform scale = getScaleTransform();
+			Transform result = translation * changeBasis * scale;
+			return result;
 		}
-		internal virtual Transform getScaleTransform(Point3d location) { return double.IsNaN(mScale) ? Rhino.Geometry.Transform.Identity : Rhino.Geometry.Transform.Scale(location, mScale); }
+
+		internal Plane placementPlane()
+		{
+			IfcCartesianPoint cp = LocalOrigin;
+			Transform changeBasis = vecsTransform();
+			Plane plane = Plane.WorldXY;
+			plane.Transform(changeBasis);
+			if (cp != null)
+				plane.Origin = cp.Location;
+			return plane;
+		}
+		internal virtual Transform getScaleTransform() 
+		{
+			if (double.IsNaN(mScale))
+				return Rhino.Geometry.Transform.Identity;
+			return Rhino.Geometry.Transform.Scale(Point3d.Origin, mScale); 
+		}
 		protected virtual Transform vecsTransform()
 		{
-			Vector3d vx = new Vector3d(1, 0, 0), vy = new Vector3d(0, 1, 0);
+			Vector3d vx = Vector3d.XAxis, vy = Vector3d.YAxis;
 			Transform tr = Rhino.Geometry.Transform.Identity;
-			if (mAxis1 > 0)
+			if (mAxis1 != null)
 			{
 				vx = Axis1.Vector3d;
+				vx.Unitize();
 				tr.M00 = vx.X;
 				tr.M10 = vx.Y;
 				tr.M20 = vx.Z;
 			}
-			if (mAxis2 > 0)
+			if (mAxis2 != null)
 			{
 				vy = Axis2.Vector3d;
 			}
 			else
 			{
-				IfcCartesianTransformationOperator2D placement2D = this as IfcCartesianTransformationOperator2D;
-				if(placement2D != null)
+				IfcCartesianTransformationOperator2D operator2D = this as IfcCartesianTransformationOperator2D;
+				if(operator2D != null)
 				{
 					vy = Vector3d.CrossProduct(Vector3d.ZAxis, vx);
 				}
 			}
+			vy.Unitize();
 			tr.M01 = vy.X;
 			tr.M11 = vy.Y;
 			tr.M21 = vy.Z;
+			Vector3d vz = Vector3d.CrossProduct(vx, vy);
+			IfcCartesianTransformationOperator3D operator3d = this as IfcCartesianTransformationOperator3D;
+			if(operator3d != null)
+			{
+				if (operator3d.Axis3 != null)
+				{
+					vz = operator3d.Axis3.Vector3d;
+				}
+			}
+			vz.Unitize();
+			tr.M02 = vz.X;
+			tr.M12 = vz.Y;
+			tr.M22 = vz.Z;
+
 			return tr;
 		}
 	}
 	public partial class IfcCartesianTransformationOperator2DnonUniform
 	{
-		internal override Transform getScaleTransform(Point3d location) { return Rhino.Geometry.Transform.Scale(new Plane(location, Vector3d.XAxis, Vector3d.YAxis), Scale, mScale2, 1); }
+		internal override Transform getScaleTransform() 
+		{
+			double scaleX = double.IsNaN(Scale) ? 1 : Scale;
+			double scaleY = double.IsNaN(Scale2) ? scaleX : Scale2;
+			return Rhino.Geometry.Transform.Scale(Plane.WorldXY, scaleX, scaleY, 1); 
+		}
 	}
 	public partial class IfcCartesianTransformationOperator3D
 	{
-		internal Vector3d Axis3Vector { get { return (mAxis3 > 0 ? Axis3.Vector3d : Vector3d.ZAxis); } }
-		protected override Transform vecsTransform()
-		{
-			Transform tr = base.vecsTransform();
-			Vector3d v = Axis3Vector;
-			tr.M02 = v.X;
-			tr.M12 = v.Y;
-			tr.M22 = v.Z;
-			return tr;
-		}
+		internal Vector3d Axis3Vector { get { return (mAxis3 != null ? Axis3.Vector3d : Vector3d.ZAxis); } }
 	}
 	public partial class IfcCartesianTransformationOperator3DnonUniform
 	{
-		internal override Transform getScaleTransform(Point3d location) { return Rhino.Geometry.Transform.Scale(new Plane(location, Vector3d.XAxis, Vector3d.YAxis), Scale, Scale2, Scale3); }
-	}
-	public partial class IfcCompositeCurveSegment
-	{
-		//internal IfcCompositeCurveSegment(DatabaseIfc db, Curve c, bool sense, IfcTransitionCode tc, bool twoD, IfcCartesianPoint optStrt, out IfcCartesianPoint end)
-		//	: this(tc, sense, IfcBoundedCurve.convCurve(db, c, optStrt, twoD, out end)) { }
+		internal override Transform getScaleTransform() 
+		{
+			double scaleX = Scale, scaleY = Scale2, scaleZ = Scale3;
+			return Rhino.Geometry.Transform.Scale(Plane.WorldXY, scaleX, scaleY, scaleZ);
+		}
 	}
 	public partial class IfcConnectionPointEccentricity
 	{

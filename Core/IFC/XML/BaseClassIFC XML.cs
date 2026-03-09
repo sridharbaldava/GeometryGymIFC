@@ -25,7 +25,6 @@ using System.IO;
 using System.ComponentModel;
 using System.Linq;
 using System.Xml;
-//using System.Xml.Linq;
 
 
 using GeometryGym.STEP;
@@ -68,7 +67,7 @@ namespace GeometryGym.Ifc
 			SetXML(element, host, processed);
 			
 			if(mDatabase.XMLMandatoryId)
-				element.SetAttribute("id", "i" + mIndex);
+				element.SetAttribute("id", "i" + mStepId);
 			if (string.Compare(name, type) != 0)
 			{
 				XmlAttribute typeAttribute = doc.CreateAttribute("type", mDatabase.mXsiNamespace);
@@ -101,7 +100,7 @@ namespace GeometryGym.Ifc
 			XmlElement element = xml.OwnerDocument.CreateElement(name, mDatabase.mXmlNamespace);
 			xml.AppendChild(element);
 			foreach (IBaseClassIfc o in objects)
-				element.AppendChild(mDatabase[o.Index].GetXML(xml.OwnerDocument, "", this, processed));
+				element.AppendChild((o as BaseClassIfc).GetXML(xml.OwnerDocument, "", this, processed));
 		}
 		internal static XmlNode convert(XmlDocument doc, IfcValue value, string name, string ifcnamespace)
 		{

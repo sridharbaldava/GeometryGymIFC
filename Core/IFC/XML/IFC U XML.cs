@@ -18,18 +18,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Reflection;
-using System.IO;
-using System.ComponentModel;
 using System.Linq;
 using System.Xml;
-//using System.Xml.Linq;
-
 
 namespace GeometryGym.Ifc
 {
-	public partial class IfcUnitaryEquipment : IfcEnergyConversionDevice
+	public partial class IfcUnitaryEquipment
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -44,7 +38,7 @@ namespace GeometryGym.Ifc
 				xml.SetAttribute("PredefinedType", mPredefinedType.ToString().ToLower());
 		}
 	}
-	public partial class IfcUnitaryEquipmentType : IfcEnergyConversionDeviceType
+	public partial class IfcUnitaryEquipmentType
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -60,7 +54,7 @@ namespace GeometryGym.Ifc
 		}
 	}
 
-	public partial class IfcUnitAssignment : BaseClassIfc
+	public partial class IfcUnitAssignment
 	{
 		internal override void ParseXml(XmlElement xml)
 		{
@@ -85,10 +79,10 @@ namespace GeometryGym.Ifc
 			XmlElement element = xml.OwnerDocument.CreateElement("Units", mDatabase.mXmlNamespace);
 			xml.AppendChild(element);
 			foreach (IfcUnit unit in Units)
-				element.AppendChild(mDatabase[unit.Index].GetXML(xml.OwnerDocument, "", this, processed));
+				element.AppendChild((unit as BaseClassIfc).GetXML(xml.OwnerDocument, "", this, processed));
 		}
 	}
-	public partial class IfcUShapeProfileDef : IfcParameterizedProfileDef
+	public partial class IfcUShapeProfileDef
 	{
 		internal override void ParseXml(XmlElement xml)
 		{

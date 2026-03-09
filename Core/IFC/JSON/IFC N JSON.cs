@@ -24,24 +24,32 @@ using System.IO;
 using System.ComponentModel;
 using System.Linq;
 
+#if (NET || !NOIFCJSON)
+#if (NEWTONSOFT)
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using JsonObject = Newtonsoft.Json.Linq.JObject;
+using JsonArray = Newtonsoft.Json.Linq.JArray;
+#else
+using System.Text.Json.Nodes;
+#endif
 
 namespace GeometryGym.Ifc
 {
-	public abstract partial class IfcNamedUnit : BaseClassIfc, IfcUnit //ABSTRACT SUPERTYPE OF (ONEOF(IfcContextDependentUnit,IfcConversionBasedUnit,IfcSIUnit));
+	public partial class IfcNamedUnit
 	{
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
+			base.parseJsonObject(obj);
 
-			JObject jobj = obj.GetValue("Dimensions", StringComparison.InvariantCultureIgnoreCase) as JObject;
+			JsonObject jobj = obj["Dimensions"] as JsonObject;
 			if (jobj != null)
-				Dimensions = mDatabase.ParseJObject<IfcDimensionalExponents>(jobj);
-			JToken token = obj.GetValue("UnitType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcUnitEnum>(token.Value<string>(), out mUnitType);
+				Dimensions = mDatabase.ParseJsonObject<IfcDimensionalExponents>(jobj);
+			var node = obj["UnitType"];
+			if (node != null)
+				Enum.TryParse<IfcUnitEnum>(node.GetValue<string>(), out mUnitType);
 		}
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			IfcDimensionalExponents exponents = Dimensions;
@@ -50,35 +58,36 @@ namespace GeometryGym.Ifc
 			obj["UnitType"] = mUnitType.ToString();
 		}
 	}
-	public partial class IfcNavigationElement : IfcBuiltElement
+	public partial class IfcNavigationElement
 	{
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			if (mPredefinedType != IfcNavigationElementTypeEnum.NOTDEFINED)
 				obj["PredefinedType"] = mPredefinedType.ToString();
 		}
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			JToken token = obj.GetValue("PredefinedType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcNavigationElementTypeEnum>(token.Value<string>(), true, out mPredefinedType);
+			base.parseJsonObject(obj);
+			var node = obj["PredefinedType"];
+			if (node != null)
+				Enum.TryParse<IfcNavigationElementTypeEnum>(node.GetValue<string>(), true, out mPredefinedType);
 		}
 	}
-	public partial class IfcNavigationElementType : IfcBuiltElementType
+	public partial class IfcNavigationElementType
 	{
-		protected override void setJSON(JObject obj, BaseClassIfc host, SetJsonOptions options)
+		protected override void setJSON(JsonObject obj, BaseClassIfc host, SetJsonOptions options)
 		{
 			base.setJSON(obj, host, options);
 			obj["PredefinedType"] = mPredefinedType.ToString();
 		}
-		internal override void parseJObject(JObject obj)
+		internal override void parseJsonObject(JsonObject obj)
 		{
-			base.parseJObject(obj);
-			JToken token = obj.GetValue("PredefinedType", StringComparison.InvariantCultureIgnoreCase);
-			if (token != null)
-				Enum.TryParse<IfcNavigationElementTypeEnum>(token.Value<string>(), true, out mPredefinedType);
+			base.parseJsonObject(obj);
+			var node = obj["PredefinedType"];
+			if (node != null)
+				Enum.TryParse<IfcNavigationElementTypeEnum>(node.GetValue<string>(), true, out mPredefinedType);
 		}
 	}
 }
+#endif

@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\Rhino3dm.7.14.0\build\net45\Rhino3dm.props" Condition="Exists('..\packages\Rhino3dm.7.14.0\build\net45\Rhino3dm.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -9,17 +10,18 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>GeometryGym</RootNamespace>
     <AssemblyName>GeometryGymIFCRhinoCommonx64</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NOIFCJSON OPEN_SOURCE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -27,22 +29,23 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\x64\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;NOIFCJSON OPEN_SOURCE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NEWTONSOFT OPEN_SOURCE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <WarningLevel>0</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;NEWTONSOFT OPEN_SOURCE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -50,11 +53,11 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Rhino3dmIO, Version=7.1.20343.1000, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Rhino3dmIO.Desktop.7.1.20343.9491\lib\net45\Rhino3dmIO.dll</HintPath>
+    <Reference Include="Rhino3dm, Version=7.14.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rhino3dm.7.14.0\lib\net45\Rhino3dm.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -398,6 +401,12 @@
     <Compile Include="..\..\core\ifc\xml\IFC W XML.cs">
       <Link>IFC\XML\IFC W XML.cs</Link>
     </Compile>
+    <Compile Include="..\..\Core\IFC\XML\IFC X XML.cs">
+      <Link>IFC\XML\IFC X XML.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Core\IFC\XML\IFC Y XML.cs">
+      <Link>IFC\XML\IFC Y XML.cs</Link>
+    </Compile>
     <Compile Include="..\..\core\ifc\xml\IFC Z XML.cs">
       <Link>IFC\XML\IFC Z XML.cs</Link>
     </Compile>
@@ -496,12 +505,11 @@
     <PostBuildEvent>
     </PostBuildEvent>
   </PropertyGroup>
-  <Import Project="..\packages\Rhino3dmIO.Desktop.7.1.20343.9491\build\net45\Rhino3dmIO.Desktop.targets" Condition="Exists('..\packages\Rhino3dmIO.Desktop.7.1.20343.9491\build\net45\Rhino3dmIO.Desktop.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Rhino3dmIO.Desktop.7.1.20343.9491\build\net45\Rhino3dmIO.Desktop.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Rhino3dmIO.Desktop.7.1.20343.9491\build\net45\Rhino3dmIO.Desktop.targets'))" />
+    <Error Condition="!Exists('..\packages\Rhino3dm.7.14.0\build\net45\Rhino3dm.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Rhino3dm.7.14.0\build\net45\Rhino3dm.props'))" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

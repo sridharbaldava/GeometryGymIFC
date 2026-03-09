@@ -28,41 +28,41 @@ using GeometryGym.STEP;
 
 namespace GeometryGym.Ifc
 {
-	public abstract partial class IfcNamedUnit : BaseClassIfc, IfcUnit //ABSTRACT SUPERTYPE OF (ONEOF(IfcContextDependentUnit,IfcConversionBasedUnit,IfcSIUnit));
+	public abstract partial class IfcNamedUnit
 	{
-		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + (mDimensions == null ? ",*" : ",#" + mDimensions.Index) + ",." + mUnitType.ToString() + "."; }
+		protected override string BuildStringSTEP(ReleaseVersion release) { return (mDimensions == null ? "*" : "#" + mDimensions.StepId) + ",." + mUnitType.ToString() + "."; }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary)
 		{
 			mDimensions = dictionary[ParserSTEP.StripLink(str, ref pos, len)] as IfcDimensionalExponents;
 			Enum.TryParse<IfcUnitEnum>(ParserSTEP.StripField(str, ref pos, len).Replace(".", ""), true, out mUnitType);
 		}
 	}
-	public partial class IfcNavigationElement : IfcBuiltElement
+	public partial class IfcNavigationElement
 	{
-		protected override string BuildStringSTEP()
+		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
-			return base.BuildStringSTEP() + (mPredefinedType == IfcNavigationElementTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + ".");
+			return base.BuildStringSTEP(release) + (mPredefinedType == IfcNavigationElementTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + ".");
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcNavigationElementTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcNavigationElementTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
-	public partial class IfcNavigationElementType : IfcBuiltElementType
+	public partial class IfcNavigationElementType
 	{
-		protected override string BuildStringSTEP()
+		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
-			return base.BuildStringSTEP() + ",." + mPredefinedType.ToString() + ".";
+			return base.BuildStringSTEP(release) + ",." + mPredefinedType.ToString() + ".";
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int, BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
 			if (s.StartsWith("."))
-				Enum.TryParse<IfcNavigationElementTypeEnum>(s.Replace(".", ""), true, out mPredefinedType);
+				Enum.TryParse<IfcNavigationElementTypeEnum>(s.Substring(1, s.Length - 2), true, out mPredefinedType);
 		}
 	}
 }
