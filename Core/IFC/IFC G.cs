@@ -397,7 +397,7 @@ namespace GeometryGym.Ifc
 
 		public IfcGeotechnicalStratum() : base() { }
 		public IfcGeotechnicalStratum(DatabaseIfc db) : base(db) { }
-		public IfcGeotechnicalStratum(DatabaseIfc db, IfcGeotechnicalStratum geotechnicalStratum, DuplicateOptions options) : base(db, geotechnicalStratum, options) { }
+		public IfcGeotechnicalStratum(DatabaseIfc db, IfcGeotechnicalStratum geotechnicalStratum, DuplicateOptions options) : base(db, geotechnicalStratum, options) { mPredefinedType = geotechnicalStratum.mPredefinedType; }
 		public IfcGeotechnicalStratum(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation)
 			: base(host.Database)
 		{

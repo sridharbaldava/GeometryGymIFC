@@ -453,7 +453,7 @@ namespace GeometryGym.Ifc
 	}
 	public partial class IfcFooting
 	{
-		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + (mPredefinedType == IfcFootingTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + "."); }
+		protected override string BuildStringSTEP(ReleaseVersion release) { return base.BuildStringSTEP(release) + (release > ReleaseVersion.IFC2x3 && mPredefinedType == IfcFootingTypeEnum.NOTDEFINED ? ",$" : ",." + mPredefinedType.ToString() + "."); }
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);

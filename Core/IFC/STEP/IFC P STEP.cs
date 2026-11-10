@@ -143,11 +143,13 @@ namespace GeometryGym.Ifc
 	{
 		protected override string BuildStringSTEP(ReleaseVersion release)
 		{
-			string id = Identification;
-			if (string.IsNullOrEmpty(mIdentification) && string.IsNullOrEmpty(mGivenName) && string.IsNullOrEmpty(mFamilyName))
+			string id = Identification, familyName = mFamilyName;
+			if (release < ReleaseVersion.IFC4 && string.IsNullOrEmpty(mGivenName) && string.IsNullOrEmpty(mFamilyName))
+				familyName = "Unknown";
+			else if (string.IsNullOrEmpty(mIdentification) && string.IsNullOrEmpty(mGivenName) && string.IsNullOrEmpty(mFamilyName))
 				id = "Unknown";
 			return (string.IsNullOrEmpty(id) ? "$," : "'" + ParserSTEP.Encode(id) + "',") + 
-				(string.IsNullOrEmpty(mFamilyName) ? "$," : "'" + ParserSTEP.Encode(mFamilyName) + "',") + 
+				(string.IsNullOrEmpty(familyName) ? "$," : "'" + ParserSTEP.Encode(familyName) + "',") + 
 				(string.IsNullOrEmpty(mGivenName) ? "$," : "'" + ParserSTEP.Encode(mGivenName) + "',") +
 				(mMiddleNames.Count == 0 ? "$," : "(" + string.Join(",", mMiddleNames.Select(x=> "'" + ParserSTEP.Encode(x) + "'")) + "),") +
 				(mPrefixTitles.Count == 0 ? "$," : "(" + string.Join(",", mPrefixTitles.Select(x=>"'" + ParserSTEP.Encode(x) + "'")) + "),") +
@@ -947,7 +949,8 @@ namespace GeometryGym.Ifc
 				(mDefinedValues.Count > 0 ? "(" + string.Join(",", mDefinedValues.Select(x=>x.ToString())) + ")," : "$,") +
 				(string.IsNullOrEmpty(mExpression) ? "$," : "'" + ParserSTEP.Encode(mExpression) + "',") + 
 				(mDefiningUnit == null ? "$" : "#" + mDefiningUnit.StepId) + 
-				(mDefinedUnit == null ? ",$,." : ",#,." + mDefinedUnit.StepId) + mCurveInterpolation.ToString() + ".";
+				(mDefinedUnit == null ? ",$" : ",#" + mDefinedUnit.StepId) +
+				(mCurveInterpolation == IfcCurveInterpolationEnum.NOTDEFINED ? ",$" : ",." + mCurveInterpolation.ToString() + ".");
 		}
 	}
 	public partial class IfcPropertyTableValue
@@ -958,12 +961,18 @@ namespace GeometryGym.Ifc
 				(mDefinedValues.Count > 0 ? "(" + string.Join(",", mDefinedValues.Select(x => x.ToString())) + ")," : "$,") +
 				(string.IsNullOrEmpty(mExpression) ? "$," : "'" + ParserSTEP.Encode(mExpression) + "',") +
 				(mDefiningUnit == null ? "$" : "#" + mDefiningUnit.StepId) +
-				(mDefinedUnit == null ? ",$,." : ",#,." + mDefinedUnit.StepId) + mCurveInterpolation.ToString() + ".";
+				(mDefinedUnit == null ? ",$" : ",#" + mDefinedUnit.StepId) +
+				(mCurveInterpolation == IfcCurveInterpolationEnum.NOTDEFINED ? ",$" : ",." + mCurveInterpolation.ToString() + ".");
 		}
 		internal override void parse(string str, ref int pos, ReleaseVersion release, int len, ConcurrentDictionary<int,BaseClassIfc> dictionary)
 		{
 			base.parse(str, ref pos, release, len, dictionary);
 			string s = ParserSTEP.StripField(str, ref pos, len);
+
+			//check for parentheses around defining values
+			if (!string.IsNullOrEmpty(s) && s.StartsWith("(") && s.EndsWith(")")) // fix
+				s = s.Substring(1, s.Length - 2);
+
 			if (s[0] != '$')
 			{
 				List<string> ss = ParserSTEP.SplitLineFields(s);
@@ -975,6 +984,10 @@ namespace GeometryGym.Ifc
 				}
 			}
 			s = ParserSTEP.StripField(str, ref pos, len);
+			//check for parentheses around defining values
+			if (!string.IsNullOrEmpty(s) && s.StartsWith("(") && s.EndsWith(")")) // fix
+				s = s.Substring(1, s.Length - 2);
+
 			if (s[0] != '$')
 			{
 				List<string> ss = ParserSTEP.SplitLineFields(s);

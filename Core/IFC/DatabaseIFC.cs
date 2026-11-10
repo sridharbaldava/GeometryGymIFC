@@ -541,8 +541,9 @@ namespace GeometryGym.Ifc
 			if (obj == null || obj.mDatabase == null || string.IsNullOrEmpty(obj.mGlobalId))
 				return 0;
 			string keyValue = key(obj);
-			mDictionary.TryGetValue(keyValue, out int result);
-			return result;
+			if(mDictionary.TryGetValue(keyValue, out int result))
+				return result;
+			return 0;
 		}
 		internal void AddObject(BaseClassIfc obj, int index) 
 		{
@@ -711,12 +712,34 @@ namespace GeometryGym.Ifc
 				ctor = getConstructor(type, new[] { typeof(IfcObjectDefinition), typeof(IfcObjectPlacement), typeof(IfcProductDefinitionShape), typeof(IfcDistributionSystem) });
 				if (ctor == null)
 				{
-					IfcElement element = host as IfcElement;
-					if (element != null)
+					if (host is IfcElement hostElement)
 					{
 						ctor = getConstructor(type, new[] { typeof(IfcElement), typeof(IfcObjectPlacement), typeof(IfcProductDefinitionShape) });
 						if(ctor != null)
-							return ctor.Invoke(new object[] { element, placement, representation }) as IfcProduct;
+							return ctor.Invoke(new object[] { hostElement, placement, representation }) as IfcProduct;
+					}
+					if(host is IfcSpatialStructureElement hostSpatialStructure)
+					{
+						ctor = getConstructor(type, new[] { typeof(IfcSpatialStructureElement), typeof(string), typeof(IfcObjectPlacement), typeof(IfcProductDefinitionShape) });
+						if(ctor != null)
+						{
+							return ctor.Invoke(new object[] { hostSpatialStructure, "", placement, representation }) as IfcProduct;
+						}
+					}
+					if(host is IfcSpatialElement hostSpatialElement)
+					{
+						if(string.Compare(type.Name, "IfcSpatialZone", true) == 0)
+						{
+							return new IfcSpatialZone(hostSpatialElement, placement, representation);
+						}
+					}
+					if(host is IfcProject project)
+					{
+						ctor = getConstructor(type, new[] { typeof(IfcProject), typeof(string), typeof(IfcObjectPlacement), typeof(IfcProductDefinitionShape) });
+						if (ctor != null)
+						{
+							return ctor.Invoke(new object[] { project, "", placement, representation }) as IfcProduct;
+						}
 					}
 					return null;
 

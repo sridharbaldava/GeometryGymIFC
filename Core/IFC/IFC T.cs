@@ -1188,8 +1188,8 @@ namespace GeometryGym.Ifc
 		public IfcTunnel(DatabaseIfc db) : base(db) { }
 		public IfcTunnel(DatabaseIfc db, IfcTunnel tunnel, DuplicateOptions options) : base(db, tunnel, options) { PredefinedType = tunnel.PredefinedType; }
 		public IfcTunnel(DatabaseIfc db, string name) : base(db, name) { }
-		public IfcTunnel(IfcFacility host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { Name = name; }
-		internal IfcTunnel(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		public IfcTunnel(IfcFacility host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
+		internal IfcTunnel(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
 	}
 	[Serializable, VersionAdded(ReleaseVersion.IFC4X4_DRAFT)]
 	public partial class IfcTunnelPart : IfcFacilityPart
@@ -1199,7 +1199,9 @@ namespace GeometryGym.Ifc
 		public IfcTunnelPart() : base() { }
 		public IfcTunnelPart(DatabaseIfc db) : base(db) { }
 		public IfcTunnelPart(DatabaseIfc db, IfcTunnelPart tunnelPart, DuplicateOptions options) : base(db, tunnelPart, options) { }
-		public IfcTunnelPart(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		public IfcTunnelPart(IfcTunnel host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
+		public IfcTunnelPart(IfcTunnelPart host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
+		internal IfcTunnelPart(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
 	}
 	[Obsolete("DEPRECATED IFC4", false)]
 	[Serializable]

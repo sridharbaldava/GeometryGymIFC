@@ -570,12 +570,18 @@ namespace GeometryGym.Ifc
 				RepresentationType = isTwoD ? ShapeRepresentationType.Curve2D.ToString() : ShapeRepresentationType.Curve3D.ToString();
 		}
 
-		//should remove above as in 3d?? hierarchy test
 		public IfcShapeRepresentation(IfcFacetedBrep brep) : base(brep) { RepresentationType = ShapeRepresentationType.Brep.ToString(); }
 		public IfcShapeRepresentation(IfcFaceBasedSurfaceModel surface) : base(surface) { RepresentationType = ShapeRepresentationType.SurfaceModel.ToString(); }
 		public IfcShapeRepresentation(IfcGeometricSet set) : base(set) { RepresentationType = ShapeRepresentationType.GeometricSet.ToString(); }
 		public IfcShapeRepresentation(IfcMappedItem item) : base(item) { RepresentationType = ShapeRepresentationType.MappedRepresentation.ToString(); }
-		public IfcShapeRepresentation(IfcPoint point) : base(point) { RepresentationType = ShapeRepresentationType.Point.ToString(); }
+		public IfcShapeRepresentation(IfcPoint point) : base(point)
+		{
+			if(mDatabase != null && mDatabase.Release < ReleaseVersion.IFC4)
+				RepresentationType = ShapeRepresentationType.GeometricSet.ToString(); 
+			else
+				RepresentationType = ShapeRepresentationType.Point.ToString(); 
+		}
+
 		//internal IfcShapeRepresentation(IfcRepresentationMap rm) : base(new IfcMappedItem(rm), "Model", "MappedRepresentation") { }
 		public IfcShapeRepresentation(IfcSectionedSpine spine) : base(spine)
 		{
@@ -593,7 +599,7 @@ namespace GeometryGym.Ifc
 		public IfcShapeRepresentation(IfcExtrudedAreaSolid extrudedAreaSolid) : base(extrudedAreaSolid) { RepresentationType = ShapeRepresentationType.SweptSolid.ToString(); }
 		public IfcShapeRepresentation(IfcRevolvedAreaSolid revolvedAreaSolid) : base(revolvedAreaSolid) { RepresentationType = ShapeRepresentationType.SweptSolid.ToString(); }
 		public IfcShapeRepresentation(IfcExtrudedAreaSolidTapered extrudedAreaSolidTapered) : base(extrudedAreaSolidTapered) { RepresentationType = ShapeRepresentationType.AdvancedSweptSolid.ToString(); }
-		public IfcShapeRepresentation(IfcRevolvedAreaSolidTapered revolvedAreaSolidTapered) : base(revolvedAreaSolidTapered) { RepresentationType = ShapeRepresentationType.AdvancedSweptSolid.ToString(); ; }
+		public IfcShapeRepresentation(IfcRevolvedAreaSolidTapered revolvedAreaSolidTapered) : base(revolvedAreaSolidTapered) { RepresentationType = ShapeRepresentationType.AdvancedSweptSolid.ToString(); }
 		public IfcShapeRepresentation(IfcSweptAreaSolid sweep) : base(sweep) 
 		{
 			if(mDatabase.Release < ReleaseVersion.IFC4 && (sweep is IfcExtrudedAreaSolid || sweep is IfcRevolvedAreaSolid))
@@ -871,7 +877,9 @@ namespace GeometryGym.Ifc
 		public IfcSite(DatabaseIfc db, string name) : base(db.Factory.RootPlacement) { Name = name; }
 		public IfcSite(string name, IfcObjectPlacement placement) : base(placement) { Name = name; }
 		public IfcSite(IfcSite host, string name) : base(host, name) { }
-		public IfcSite(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape shape) : base(host, placement, shape) { }
+		public IfcSite(IfcProject project, string name) : base(project.Database) { project.AddAggregated(this); Name = name; }
+		public IfcSite(IfcProject host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape shape) : base(host, name, placement, shape) { }
+		internal IfcSite(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape shape) : base(host, name, placement, shape) { }
 	}
 	[Serializable]
 	public partial class IfcSIUnit : IfcNamedUnit
@@ -1053,8 +1061,8 @@ namespace GeometryGym.Ifc
 		internal IfcSpace() : base() { }
 		internal IfcSpace(DatabaseIfc db, IfcSpace s, DuplicateOptions options) : base(db, s, options) { PredefinedType = s.PredefinedType; mElevationWithFlooring = s.mElevationWithFlooring; }
 		public IfcSpace(IfcSpatialStructureElement host, string name) : base(host, name) { IfcRelCoversSpaces cs = new IfcRelCoversSpaces(this, null); }
-		public IfcSpace(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { Name = name; }
-		internal IfcSpace(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		public IfcSpace(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
+		public IfcSpace(IfcProject host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
 		public void AddBoundary(IfcRelSpaceBoundary boundary) { mBoundedBy.Add(boundary); }
 	}
 	public partial interface IfcSpaceBoundarySelect : IBaseClassIfc //IFC4 SELECT (	IfcSpace, IfcExternalSpatialElement);
@@ -1158,10 +1166,24 @@ namespace GeometryGym.Ifc
 			mLongName = e.mLongName;
 			if (options.DuplicateDownstream)
 			{
+				var downStreamOptions = new DuplicateOptions(options) { DuplicateHost = false };
 				foreach (IfcRelContainedInSpatialStructure css in e.ContainsElements)
 				{
-					foreach(IfcProduct obj in css.RelatedElements)
-						db.Factory.Duplicate(obj, options);
+					foreach (IfcProduct obj in css.RelatedElements)
+					{
+						var duplicate = db.Factory.Duplicate(obj, downStreamOptions) as IfcProduct;
+						if(duplicate != null)
+						{
+							if(mContainsElements.Count == 0)
+							{
+								new IfcRelContainedInSpatialStructure(duplicate, this);
+							}
+							else
+							{
+								mContainsElements.First().RelatedElements.Add(duplicate);
+							}
+						}
+					}
 				}
 				DuplicateOptions optionsNoHost = new DuplicateOptions(options) { DuplicateHost = false };
 				foreach(IfcSystem system in e.ServicedBySystems.Select(x=>x.RelatingSystem))
@@ -1200,9 +1222,31 @@ namespace GeometryGym.Ifc
 			host.AddAggregated(this);
 		}
 		protected IfcSpatialElement(IfcObjectPlacement placement) : base(placement) { }
-		protected IfcSpatialElement(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) 
-		{ 
-			if(placement == null)
+		protected IfcSpatialElement(IfcProject host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation)
+			: base(host.Database) 
+		{
+			host.AddAggregated(this);
+			setAttributes(null, name, placement, representation);
+				
+		}
+		protected IfcSpatialElement(IfcSpatialElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation)  
+			: base(host.Database) 
+		{
+			if (this is IfcSpatialZone spatialZone)
+			{
+				host.ReferenceElement(this);
+				setAttributes(null, name, placement, representation);
+			}
+			else
+			{
+				host.AddElement(this);
+				setAttributes(host, name, placement, representation);
+			}
+		}
+		private void setAttributes(IfcProduct host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation)
+		{
+			Name = name;
+			if (placement == null)
 			{
 				IfcAxis2Placement3D relativePlacement = mDatabase.Factory.XYPlanePlacement;
 				if (host is IfcProduct product && product.ObjectPlacement != null)
@@ -1210,6 +1254,9 @@ namespace GeometryGym.Ifc
 				else
 					ObjectPlacement = new IfcLocalPlacement(relativePlacement);
 			}
+			else
+				ObjectPlacement = placement;
+			Representation = representation;
 		}
 		protected override void initialize()
 		{
@@ -1326,11 +1373,18 @@ namespace GeometryGym.Ifc
 		protected IfcSpatialStructureElement() : base() { }
 		protected IfcSpatialStructureElement(DatabaseIfc db) : base(db) { }
 		protected IfcSpatialStructureElement(IfcObjectPlacement pl) : base(pl) { if (pl.mDatabase.mRelease <= ReleaseVersion.IFC2x3) mCompositionType = IfcElementCompositionEnum.ELEMENT; }
-		protected IfcSpatialStructureElement(IfcSpatialStructureElement host, string name, IfcObjectPlacement pl) : base(host, pl, null) { Name = name; if (pl.mDatabase.mRelease <= ReleaseVersion.IFC2x3) mCompositionType = IfcElementCompositionEnum.ELEMENT; }
+		protected IfcSpatialStructureElement(IfcSpatialStructureElement host, string name, IfcObjectPlacement pl) : base(host, name, pl, null) 
+		{
+			if (mDatabase != null && mDatabase.mRelease <= ReleaseVersion.IFC2x3) 
+				mCompositionType = IfcElementCompositionEnum.ELEMENT; 
+		}
 		protected IfcSpatialStructureElement(DatabaseIfc db, IfcSpatialElement e, DuplicateOptions options) : base(db, e, options) { }
 		protected IfcSpatialStructureElement(DatabaseIfc db, IfcSpatialStructureElement e, DuplicateOptions options) : base(db, e, options) { mCompositionType = e.mCompositionType; }
 		protected IfcSpatialStructureElement(IfcSpatialStructureElement host, string name) : base(host,name) { if (mDatabase.mRelease < ReleaseVersion.IFC4) mCompositionType = IfcElementCompositionEnum.ELEMENT; }
-		protected IfcSpatialStructureElement(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		protected IfcSpatialStructureElement(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) 
+			: base(host, name, placement, representation) { }
+		protected IfcSpatialStructureElement(IfcProject host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) 
+			: base(host, name, placement, representation) { }
 
 		private bool mWorkInLocalCoordinates = false;  //Identify Transform when ignoring placement for Site
 		public void EnableLocalCoordinates() { mWorkInLocalCoordinates = true; }
@@ -1353,8 +1407,14 @@ namespace GeometryGym.Ifc
 		protected IfcSpatialZone() : base() { }
 		protected IfcSpatialZone(DatabaseIfc db, IfcSpatialZone p, DuplicateOptions options) : base(db, p, options) { PredefinedType = p.PredefinedType; }
 		public IfcSpatialZone(DatabaseIfc db, string name) : base(db.Factory.RootPlacement) { Name = name; }
-		public IfcSpatialZone(IfcSpatialElement host, string name) : base(host, name) {  }
-		internal IfcSpatialZone(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape shape) : base(host, placement, shape) { }
+		public IfcSpatialZone(IfcSpatialElement host, string name) : this(host, null, null) { Name = name;  }
+		internal IfcSpatialZone(IfcSpatialElement host, IfcObjectPlacement placement, IfcProductDefinitionShape shape) 
+			: base(host.Database) 
+		{
+			host.ReferenceElement(this);
+			ObjectPlacement = placement;
+			Representation = shape;
+		}
 	}
 	[Serializable]
 	public partial class IfcSpatialZoneType : IfcSpatialElementType  //IFC4
@@ -2794,7 +2854,7 @@ namespace GeometryGym.Ifc
 		private IfcProfileDef mSweptArea;// : IfcProfileDef;
 		private IfcAxis2Placement3D mPosition;// : IfcAxis2Placement3D; 	 :	OPTIONAL IFC4
 
-		public IfcProfileDef SweptArea { get { return mSweptArea; } set { mSweptArea = value; } }
+		public IfcProfileDef SweptArea { get { return mSweptArea; } set { mSweptArea = value; if (value != null) mSweptArea.mSweptSolids.Add(this); } }
 		public IfcAxis2Placement3D Position { get { return mPosition; } set { mPosition = value; } }
 
 		protected IfcSweptAreaSolid() : base() { }
@@ -2892,7 +2952,7 @@ namespace GeometryGym.Ifc
 	//[Obsolete("DEPRECATED IFC4", false)]
 	//ENTITY IfcSymbolStyle // IfcPresentationStyleSelect DEPRECATED IFC4
 	[Serializable]
-	public partial class IfcSystem : IfcGroup //SUPERTYPE OF(ONEOF(IfcBuildingSystem, IfcDistributionSystem, IfcStructuralAnalysisModel, IfcZone))
+	public partial class IfcSystem : IfcGroup, IfcSpatialReferenceSelect //SUPERTYPE OF(ONEOF(IfcBuildingSystem, IfcDistributionSystem, IfcStructuralAnalysisModel, IfcZone))
 	{
 		//INVERSE
 		internal IfcRelServicesBuildings mServicesBuildings = null;// : SET [0:1] OF IfcRelServicesBuildings FOR RelatingSystem  

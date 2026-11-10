@@ -157,8 +157,9 @@ namespace GeometryGym.Ifc
 		internal IfcFacility(DatabaseIfc db, IfcFacility f, DuplicateOptions options) : base(db, f, options) { }
 		public IfcFacility(DatabaseIfc db, string name) : base(db.Factory.RootPlacement) { Name = name; }
 		public IfcFacility(IfcSpatialStructureElement host, string name) : base(host, name) { }
-		internal IfcFacility(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
-		public IfcFacility(IfcFacility host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { Name = name; }
+		internal IfcFacility(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
+		public IfcFacility(IfcFacility host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
+		public IfcFacility(IfcProject host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
 	}
 	[Serializable, VersionAdded(ReleaseVersion.IFC4X2)]
 	public abstract partial class IfcFacilityPart : IfcSpatialStructureElement //SUPERTYPE OF(IfcBridgePart)
@@ -170,10 +171,10 @@ namespace GeometryGym.Ifc
 		public IfcFacilityPart() : base() { }
 		internal IfcFacilityPart(DatabaseIfc db) : base(db) { }
 		internal IfcFacilityPart(DatabaseIfc db, IfcFacilityPart f, DuplicateOptions options) : base(db, f, options) { }
-		internal IfcFacilityPart(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		internal IfcFacilityPart(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
 		public IfcFacilityPart(IfcFacility host, string name, IfcFacilityUsageEnum usage) : base(host, name) { mUsageType = usage; }
 		public IfcFacilityPart(IfcFacilityPart host, string name, IfcFacilityUsageEnum usage) : base(host, name) { mUsageType = usage; }
-		public IfcFacilityPart(IfcFacility host, string name, IfcObjectPlacement p, IfcProductDefinitionShape r, IfcFacilityUsageEnum usage) : base(host, p, r) { Name = name; mUsageType = usage; }
+		public IfcFacilityPart(IfcFacility host, string name, IfcObjectPlacement p, IfcProductDefinitionShape r, IfcFacilityUsageEnum usage) : base(host, name, p, r) { mUsageType = usage; }
 	}
 	[Serializable]
 	public partial class IfcFacilityPartCommon : IfcFacilityPart // IFC4x3
@@ -184,7 +185,9 @@ namespace GeometryGym.Ifc
 		public IfcFacilityPartCommon() : base() { }
 		public IfcFacilityPartCommon(DatabaseIfc db) : base(db) { }
 		public IfcFacilityPartCommon(DatabaseIfc db, IfcFacilityPartCommon facilityPartCommon, DuplicateOptions options) : base(db, facilityPartCommon, options) { }
-		public IfcFacilityPartCommon(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		public IfcFacilityPartCommon(IfcFacility host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
+		public IfcFacilityPartCommon(IfcFacilityPartCommon host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
+		internal IfcFacilityPartCommon(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
 	}
 	[Serializable]
 	public partial class IfcFailureConnectionCondition : IfcStructuralConnectionCondition

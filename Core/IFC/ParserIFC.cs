@@ -296,6 +296,12 @@ namespace GeometryGym.Ifc
 			{
 				if (string.Compare(type.Name,"IfcDescriptiveMeasure",true) == 0)
 					return new IfcDescriptiveMeasure(value);
+				if(string.Compare(type.Name, "IfcCountMeasure", true) == 0)
+				{
+					int dotIndex = value.IndexOf('.');
+					if(dotIndex < 0 && int.TryParse(value, out int i))
+						return new IfcCountMeasure(i);
+				}
 				double val = 0;
 				if(double.TryParse(value, System.Globalization.NumberStyles.Any, ParserSTEP.NumberFormat, out val))
 				{
@@ -374,6 +380,12 @@ namespace GeometryGym.Ifc
 			}
 			if(str.StartsWith("IFCDURATION("))
 				return IfcDuration.Convert(str.Substring(13, str.Length - 15));
+			if (str.StartsWith("IFCTIMESTAMP("))
+			{
+				string valueString = str.Substring(13, str.Length - 14);
+				if (int.TryParse(valueString, out int ts))
+					return new IfcTimeStamp(ts);
+			}
 			int i = 0;
 			if (int.TryParse(str, out i))
 				return new IfcInteger(i);

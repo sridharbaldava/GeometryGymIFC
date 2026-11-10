@@ -142,8 +142,9 @@ namespace GeometryGym.Ifc
 		public IfcMarineFacility(DatabaseIfc db, IfcMarineFacility marineFacility, DuplicateOptions options) : base(db, marineFacility, options) { }
 		public IfcMarineFacility(DatabaseIfc db, IfcMarineFacilityTypeEnum predefinedType)
 			: base(db) { PredefinedType = predefinedType; }
-		public IfcMarineFacility(IfcFacility host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation, IfcMarineFacilityTypeEnum predefinedType) : base(host, placement, representation) { Name = name; }
-		internal IfcMarineFacility(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		public IfcMarineFacility(IfcFacility host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation, IfcMarineFacilityTypeEnum predefinedType) : base(host, name, placement, representation) { }
+		public IfcMarineFacility(IfcProject host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation, IfcMarineFacilityTypeEnum predefinedType) : base(host, name, placement, representation) { }
+		internal IfcMarineFacility(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
 	}
 	[Serializable]
 	public partial class IfcMarinePart : IfcFacilityPart
@@ -154,7 +155,9 @@ namespace GeometryGym.Ifc
 		public IfcMarinePart() : base() { }
 		public IfcMarinePart(DatabaseIfc db) : base(db) { }
 		public IfcMarinePart(DatabaseIfc db, IfcMarinePart marinePart, DuplicateOptions options) : base(db, marinePart, options) { }
-		public IfcMarinePart(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		public IfcMarinePart(IfcMarineFacility host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
+		public IfcMarinePart(IfcMarinePart host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
+		internal IfcMarinePart(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
 	}
 	[Serializable]
 	public partial class IfcMaterial : IfcMaterialDefinition, NamedObjectIfc

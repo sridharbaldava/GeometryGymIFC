@@ -412,8 +412,8 @@ namespace GeometryGym.Ifc
 		public IfcBridge(DatabaseIfc db) : base(db) { }
 		public IfcBridge(DatabaseIfc db, IfcBridge bridge, DuplicateOptions options) : base(db, bridge, options) { PredefinedType = bridge.PredefinedType; }
 		public IfcBridge(DatabaseIfc db, string name) : base(db, name) { }
-		public IfcBridge(IfcFacility host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { Name = name; }
-		internal IfcBridge(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		public IfcBridge(IfcFacility host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
+		internal IfcBridge(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
 	}
 	[Serializable, VersionAdded(ReleaseVersion.IFC4X2)]
 	public partial class IfcBridgePart : IfcFacilityPart
@@ -424,7 +424,7 @@ namespace GeometryGym.Ifc
 		public IfcBridgePart() : base() { }
 		public IfcBridgePart(DatabaseIfc db) : base(db) { }
 		public IfcBridgePart(DatabaseIfc db, IfcBridgePart bridgePart, DuplicateOptions options) : base(db, bridgePart, options) { }
-		public IfcBridgePart(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { }
+		public IfcBridgePart(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { }
 	}
 	[Serializable]
 	public abstract partial class IfcBSplineCurve : IfcBoundedCurve //SUPERTYPE OF(IfcBSplineCurveWithKnots)
@@ -580,7 +580,8 @@ namespace GeometryGym.Ifc
 		public IfcBuilding(IfcPostalAddress address, string name) : base(address.mDatabase, name) { BuildingAddress = address; }
 		public IfcBuilding(IfcSpatialStructureElement host, string name) : base(host, name) { }
 		public IfcBuilding(IfcFacility host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { setDefaultAddress(); }
-		internal IfcBuilding(IfcObjectDefinition host, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, placement, representation) { setDefaultAddress(); }
+		public IfcBuilding(IfcProject host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { setDefaultAddress(); }
+		internal IfcBuilding(IfcSpatialStructureElement host, string name, IfcObjectPlacement placement, IfcProductDefinitionShape representation) : base(host, name, placement, representation) { setDefaultAddress(); }
 		
 
 		private void setDefaultAddress()  //Implementers Agreement requires address
@@ -678,8 +679,8 @@ namespace GeometryGym.Ifc
 		public IfcBuildingStorey(IfcFacilityPart host, string name, double elevation) : base(host, name) { Elevation = elevation; }
 		public IfcBuildingStorey(IfcSite host, string name, double elevation) : base(host, name) { Elevation = elevation; }
 		public IfcBuildingStorey(IfcBuildingStorey host, string name, double elevation) : base(host, name) { Elevation = elevation; }
-		public IfcBuildingStorey(IfcFacility host, string name, IfcObjectPlacement p, IfcProductDefinitionShape r) : base(host, p, r) { Name = name; }
-		internal IfcBuildingStorey(IfcObjectDefinition host, IfcObjectPlacement p, IfcProductDefinitionShape r) : base(host, p, r) { }
+		public IfcBuildingStorey(IfcFacility host, string name, IfcObjectPlacement p, IfcProductDefinitionShape r) : base(host, name, p, r) { }
+		internal IfcBuildingStorey(IfcSpatialStructureElement host, string name, IfcObjectPlacement p, IfcProductDefinitionShape r) : base(host, name, p, r) { }
 	}
 	[Serializable]
 	public partial class IfcBuiltSystem : IfcSystem //IFC4 IfcBuildingSystem

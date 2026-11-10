@@ -1294,8 +1294,29 @@ namespace GeometryGym.Ifc
 				}
 			}
 			IfcSpatialElement spatialElement = this as IfcSpatialElement;
-			if (spatialElement != null)
+			if(spatialElement != null)
 			{
+				IfcSpatialZone spatialZone = this as IfcSpatialZone;
+				if(spatialZone != null)
+				{
+					spatialZone.ReferenceElement(product);
+					if(product is IfcSpatialZone productSpatialZone)
+					{
+						return;
+					}
+					else
+					{
+						var spatialStructure = spatialZone.ReferencedInStructures.Select(x => x.RelatingStructure).OfType<IfcSpatialStructureElement>().FirstOrDefault();
+						if(spatialStructure != null)
+						{
+							spatialElement = spatialStructure;
+						}
+						else
+						{
+							spatialElement = mDatabase.Project.RootElement();
+						}
+					}
+				}
 				IfcSpatialElement productAsSpatial = product as IfcSpatialElement;
 				if (productAsSpatial == null)
 				{
@@ -1386,17 +1407,17 @@ namespace GeometryGym.Ifc
 			}
 			return null;
 		}
-		internal override bool isDuplicate(BaseClassIfc e, OptionsTestDuplicate options)
+		internal override bool isDuplicateWorker(BaseClassIfc e, OptionsTestDuplicate options)
 		{
 			IfcProduct product = e as IfcProduct;
 			if (e == null)
 				return false;
-			if (base.isDuplicate(e, options))
+			if (base.isDuplicateWorker(e, options))
 			{
 				IfcObjectPlacement placement = ObjectPlacement, placement2 = product.ObjectPlacement;
 				if (placement != null)
 				{
-					if (!placement.isDuplicate(placement2, options.Tolerance))
+					if (!placement.isDuplicate(placement2, options.Tolerance, options.RelativePlacementOnly))
 						return false;
 				}
 				else if (placement2 != null)
@@ -1531,6 +1552,7 @@ namespace GeometryGym.Ifc
 		private SET<IfcExternalReferenceRelationship> mHasExternalReference = new SET<IfcExternalReferenceRelationship>(); //IFC4 SET [0:?] OF IfcExternalReferenceRelationship FOR RelatedResourceObjects;
 		internal SET<IfcProfileProperties> mHasProperties = new SET<IfcProfileProperties>();
 		internal SET<IfcResourceConstraintRelationship> mHasConstraintRelationships = new SET<IfcResourceConstraintRelationship>(); //gg
+		internal SET<IfcSweptAreaSolid> mSweptSolids = new SET<IfcSweptAreaSolid>(); 
 		internal SET<IfcResourceConstraintRelationship> HasConstraintRelationships { get { return mHasConstraintRelationships; } }
 
 		public IfcProfileTypeEnum ProfileType { get { return mProfileType; } set { mProfileType = value; } }
